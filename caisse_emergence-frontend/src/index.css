@@ -1,0 +1,84 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@300;400;600;700&display=swap');
+
+:root {
+	--navy: #09324e;
+	--navy-900: #56a7d2;
+	--gold: #c48a21;
+	--gold-light: #b7903d;
+	--bg: #135c60;
+	--card-bg: #f7f4f4;
+	--muted: #98afc0;
+	--shadow-lg: 0 10px 30px rgba(11, 58, 90, 0.06);
+	--radius: 16px;
+}
+
+/* Background helper gradients used in components */
+.bg-linear-to-r { background-image: linear-gradient(90deg, var(--navy), rgba(15,55,81,0.9)); }
+.bg-linear-to-br { background-image: linear-gradient(135deg, var(--navy), rgba(15,55,81,0.85)); }
+
+/* Color helpers */
+.bg-navy { background-color: var(--navy); }
+.text-navy { color: var(--navy); }
+.border-navy { border-color: var(--navy); }
+.bg-gold { background-color: var(--gold); }
+.text-gold { color: var(--gold); }
+.border-gold { border-color: var(--gold); }
+.text-gold-light { color: var(--gold-light); }
+
+/* Card and shadow utilities */
+.card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-lg); }
+
+/* Small helpers */
+.rounded-xl { border-radius: var(--radius); }
+.shadow-main { box-shadow: var(--shadow-lg); }
+
+body { background-color: var(--bg); font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; color: #123; }
+
+h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
+
+/* Convenience utilities used by components */
+.bg-cream { background-color: var(--bg); }
+.font-playfair { font-family: 'Playfair Display', serif; }
+.font-inter { font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial; }
+
+/* Buttons */
+.btn-gold { background: var(--gold); color: #072434; border-radius: 9999px; padding: 8px 14px; font-weight:600; }
+.btn-primary { background: var(--navy); color: #a87777; padding: 10px 14px; border-radius: 12px; font-weight:600; }
+.btn-outline { background: transparent; color: var(--navy); padding: 8px 12px; border:1px solid rgba(11,58,90,0.08); border-radius: 10px; }
+
+/* Inputs */
+.input { width:100%; padding:10px 12px; border:1px solid rgba(11,58,90,0.06); border-radius:10px; background: #fff; }
+.input:focus { outline: none; box-shadow: 0 6px 18px rgba(11,58,90,0.06); border-color: var(--navy); }
+/* Card base */
+.card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 20px; }
+
+/* Report card */
+.report-card { border: 1px solid rgba(11,58,90,0.06); border-radius: var(--radius); padding: 28px; background: #fff; }
+.report-card .icon { height: 56px; width: 56px; display:flex; align-items:center; justify-content:center; margin: 0 auto 12px; border-radius: calc(var(--radius) - 4px); }
+
+/* Month pills */
+.month-pills { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.month-pill { background: var(--navy); color: #e1c1c1; padding:10px 14px; border-radius: calc(var(--radius) / 2); min-width:68px; text-align:center; box-shadow: 0 6px 18px rgba(11,58,90,0.06); }
+.month-pill.inactive { background: #e72020; color: var(--muted); }
+.month-pill.gold { background: #fff7eb; color: var(--gold); border:1px solid rgba(196,138,33,0.15); border-radius: calc(var(--radius) / 2); }
+
+/* Utility spacing adjustments */
+.container-wide { max-width: 1100px; margin: 0 auto; }
+
+/* Alert like in screenshots */
+.alert-info { background: linear-gradient(90deg, rgba(15,55,81,0.04), rgba(15,55,81,0.02)); padding: 12px 16px; border-radius: 10px; display:flex; gap:12px; align-items:center; }
+.alert-info .bar { width:6px; height:36px; background:var(--gold); border-radius:4px; }
+
+.shadow-main { box-shadow: 0 12px 30px rgba(38, 115, 166, 0.06); }
+
+/* KPI cards */
+.kpi-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:16px; }
+.kpi-card { background:#fcf9f9; border-radius: var(--radius); padding:18px; box-shadow: 0 8px 24px rgba(15,55,81,0.04); border-left:4px solid transparent; }
+.kpi-card .meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
+.kpi-card .sub { font-size:12px; color:var(--muted); }
+.kpi-card .value { font-size:22px; font-weight:700; color:var(--navy); }
+.kpi-card .title { font-size:13px; color:var(--muted); margin-top:8px; }
+
+/* Dashboard table header rounded */
+.table-header-rounded thead tr th { border-top-left-radius:var(--radius); border-top-right-radius:var(--radius); }

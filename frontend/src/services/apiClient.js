@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || 'https://caisse-emergence-jjes.onrender.com';
+const API_URL = import.meta.env.VITE_API_URL;
 const TOKEN_KEY = 'caisse_emergence_token';
 
 export function getToken() {

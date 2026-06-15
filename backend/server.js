@@ -10,7 +10,18 @@ connectDB();
 
 const app = express();
 
-app.use(cors());
+// FRONTEND_URL peut contenir une ou plusieurs URLs séparées par des virgules,
+// ex: "http://localhost:5173,https://caisse-emergence.vercel.app"
+const allowedOrigins = (process.env.FRONTEND_URL || '')
+  .split(',')
+  .map((url) => url.trim())
+  .filter(Boolean);
+
+app.use(
+  cors({
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+  })
+);
 app.use(express.json());
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));

@@ -15,7 +15,7 @@ export class ContributionModel {
     const errors = [];
     if (!this.memberId) errors.push('Membre requis');
     if (!this.month) errors.push('Mois requis');
-    if (this.amount < 5000) errors.push('Montant minimum 5000 FCFA');
+    if (!this.amount || this.amount <= 0) errors.push('Le montant doit être supérieur à 0');
     return errors;
   }
 }

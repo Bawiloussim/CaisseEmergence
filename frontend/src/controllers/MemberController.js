@@ -56,6 +56,43 @@ class MemberController {
     return { success: true };
   }
 
+  syncFromApi(apiMembers) {
+    const localMembers = this.getAllMembers();
+    const merged = apiMembers.map((apiMember) => {
+      const local = localMembers.find((m) => m.accountId === apiMember._id);
+      if (local) {
+        return {
+          ...local,
+          name: apiMember.name,
+          email: apiMember.email,
+          role: apiMember.role,
+          accountRole: apiMember.accountRole,
+          monthlyContribution: apiMember.monthlyContribution,
+          phone: apiMember.phone || local.phone,
+        };
+      }
+      return {
+        id: Date.now() + Math.floor(Math.random() * 10000),
+        name: apiMember.name,
+        email: apiMember.email,
+        phone: apiMember.phone || '',
+        role: apiMember.role || 'Membre actif',
+        accountRole: apiMember.accountRole || 'membre',
+        monthlyContribution: apiMember.monthlyContribution || 5000,
+        joinDate: apiMember.joinDate || '',
+        accountId: apiMember._id,
+        createdAt: apiMember.createdAt,
+        cni: '',
+        dob: '',
+        address: '',
+        momoNumber: '',
+        photo: '',
+      };
+    });
+    StorageService.saveMembers(merged);
+    return merged;
+  }
+
   getMemberTotalContributions(memberId) {
     const contributions = StorageService.getContributions();
     return contributions

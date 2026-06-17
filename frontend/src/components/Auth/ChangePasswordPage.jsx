@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Eye, EyeOff, Lock, KeyRound } from 'lucide-react';
+import { Eye, EyeOff, Lock, KeyRound, User, Mail } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import logo from '../../assets/logo/2.jpeg';
 
 const ChangePasswordPage = () => {
-  const { changePassword, user, logout } = useAuth();
+  const { changePassword, updateProfile, user, logout } = useAuth();
+  const [name, setName] = useState(user?.name || '');
+  const [email, setEmail] = useState(user?.email || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -15,19 +17,23 @@ const ChangePasswordPage = () => {
     e.preventDefault();
     setError('');
 
-    if (newPassword.length < 6) {
-      setError('Le mot de passe doit contenir au moins 6 caractères.');
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('Les deux mots de passe ne correspondent pas.');
+    if (!name.trim()) { setError('Le nom est requis.'); return; }
+    if (!email.trim()) { setError("L'email est requis."); return; }
+    if (newPassword.length < 6) { setError('Le mot de passe doit contenir au moins 6 caractères.'); return; }
+    if (newPassword !== confirmPassword) { setError('Les deux mots de passe ne correspondent pas.'); return; }
+
+    setSubmitting(true);
+
+    const profileResult = await updateProfile({ name, email });
+    if (!profileResult.success) {
+      setError(profileResult.message);
+      setSubmitting(false);
       return;
     }
 
-    setSubmitting(true);
-    const result = await changePassword({ newPassword });
-    if (!result.success) {
-      setError(result.message);
+    const pwResult = await changePassword({ newPassword });
+    if (!pwResult.success) {
+      setError(pwResult.message);
     }
     setSubmitting(false);
   };
@@ -52,18 +58,47 @@ const ChangePasswordPage = () => {
             </div>
 
             <h2 className="font-playfair text-xl font-bold text-navy text-center mb-1">
-              Bienvenue{user?.name ? `, ${user.name}` : ''} !
+              Bienvenue !
             </h2>
             <p className="text-sm text-gray-500 text-center mb-6">
-              Pour des raisons de sécurité, choisissez un nouveau mot de passe
-              avant de continuer.
+              Personnalisez votre compte avant de continuer.
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Nouveau mot de passe
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Votre nom complet</label>
+                <div className="relative">
+                  <User size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="input"
+                    style={{ paddingLeft: '2.75rem' }}
+                    placeholder="Prénom Nom"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Votre email</label>
+                <div className="relative">
+                  <Mail size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="input"
+                    style={{ paddingLeft: '2.75rem' }}
+                    placeholder="mon@email.com"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nouveau mot de passe</label>
                 <div className="relative">
                   <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
@@ -79,7 +114,6 @@ const ChangePasswordPage = () => {
                     type="button"
                     onClick={() => setShowPassword((v) => !v)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-navy"
-                    aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
@@ -87,9 +121,7 @@ const ChangePasswordPage = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Confirmer le mot de passe
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Confirmer le mot de passe</label>
                 <div className="relative">
                   <Lock size={18} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                   <input
@@ -116,7 +148,7 @@ const ChangePasswordPage = () => {
                 disabled={submitting}
                 className="btn-gold w-full py-3 text-base disabled:opacity-60"
               >
-                {submitting ? 'Enregistrement...' : 'Valider le nouveau mot de passe'}
+                {submitting ? 'Enregistrement...' : 'Configurer mon compte'}
               </button>
             </form>
 

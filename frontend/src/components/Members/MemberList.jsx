@@ -25,9 +25,13 @@ const MemberList = ({ isSecretary }) => {
     loadMembers();
   }, []);
 
-  function loadMembers() {
-    const allMembers = MemberController.getAllMembers();
-    setMembers(allMembers);
+  async function loadMembers() {
+    try {
+      const apiMembers = await api.get('/members');
+      setMembers(MemberController.syncFromApi(apiMembers));
+    } catch {
+      setMembers(MemberController.getAllMembers());
+    }
   }
 
   const handleAddMember = async (memberData) => {

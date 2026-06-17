@@ -58,11 +58,24 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function updateProfile({ name, email }) {
+    try {
+      const data = await api.put('/auth/profile', { name, email });
+      const updated = { ...user, ...data.user };
+      localStorage.setItem(USER_KEY, JSON.stringify(updated));
+      setUser(updated);
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: err.message || 'Erreur lors de la mise à jour du profil.' };
+    }
+  }
+
   const value = {
     user,
     login,
     logout,
     changePassword,
+    updateProfile,
     isAuthenticated: !!user,
     isSecretaire: user?.accountRole === 'secretaire',
     mustChangePassword: !!user?.mustChangePassword,

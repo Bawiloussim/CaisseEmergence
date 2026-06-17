@@ -35,7 +35,7 @@ const run = async () => {
     password,
     accountRole: 'secretaire',
     role: 'Secrétaire',
-    mustChangePassword: false,
+    mustChangePassword: true,
   });
 
   console.log(`✅ Compte secrétaire créé avec succès : ${normalizedEmail}`);

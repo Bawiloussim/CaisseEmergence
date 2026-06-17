@@ -81,4 +81,25 @@ const changePassword = async (req, res) => {
   res.json({ message: 'Mot de passe mis à jour avec succès' });
 };
 
-module.exports = { login, getMe, changePassword };
+/** PUT /api/auth/profile — nom et email de l'utilisateur connecté */
+const updateProfile = async (req, res) => {
+  const { name, email } = req.body;
+  const member = await Member.findById(req.user._id);
+  if (!member) return res.status(404).json({ message: 'Compte introuvable' });
+
+  if (name && name.trim()) member.name = name.trim();
+
+  if (email) {
+    const normalizedEmail = email.toLowerCase().trim();
+    if (normalizedEmail !== member.email) {
+      const exists = await Member.findOne({ email: normalizedEmail });
+      if (exists) return res.status(409).json({ message: 'Cet email est déjà utilisé par un autre compte' });
+      member.email = normalizedEmail;
+    }
+  }
+
+  await member.save();
+  res.json({ user: toPublicUser(member) });
+};
+
+module.exports = { login, getMe, changePassword, updateProfile };

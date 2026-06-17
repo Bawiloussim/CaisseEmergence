@@ -27,8 +27,18 @@ const ContributionForm = ({ onClose, onSubmit, members, initialData }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const val = (name === 'memberId') ? (value === '' ? '' : parseInt(value)) : value;
-    setFormData(prev => ({ ...prev, [name]: val }));
+    if (name === 'memberId') {
+      const id = value === '' ? '' : parseInt(value);
+      const member = members.find(m => m.id === id);
+      setFormData(prev => ({
+        ...prev,
+        memberId: id,
+        // pré-remplir le montant du membre sauf si on édite une cotisation existante
+        ...(!initialData && member ? { amount: member.monthlyContribution || 0 } : {}),
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   const handleSubmit = (e) => {
@@ -96,8 +106,8 @@ const ContributionForm = ({ onClose, onSubmit, members, initialData }) => {
               value={formData.amount}
               onChange={handleChange}
               className="input"
-              min="5000"
-              step="1000"
+              min="1"
+              step="500"
             />
           </div>
 

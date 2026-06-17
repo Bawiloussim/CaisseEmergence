@@ -16,10 +16,10 @@ class ContributionController {
     // ensure memberId is numeric
     if (contributionData.memberId) contributionData.memberId = parseInt(contributionData.memberId);
 
-    // default amount to member's configured monthlyContribution when available
-    const member = MemberController.getMemberById(contributionData.memberId);
-    if (member && !contributionData.amount) {
-      contributionData.amount = member.monthlyContribution || 5000;
+    // default amount to member's monthlyContribution only when none is provided
+    if (!contributionData.amount) {
+      const member = MemberController.getMemberById(contributionData.memberId);
+      if (member) contributionData.amount = member.monthlyContribution || 0;
     }
 
     const contribution = new ContributionModel(contributionData);

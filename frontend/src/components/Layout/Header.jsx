@@ -1,9 +1,11 @@
 import { useState, useRef } from 'react';
 import { Users, Settings, Camera, Upload, LogOut } from 'lucide-react';
 import CurrentUserSelector from './CurrentUserSelector';
+import ProfileModal from '../Auth/ProfileModal';
 
 const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => {
   const [showSettings, setShowSettings] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const logoInputRef = useRef(null);
 
   const handleLogoUpload = (e) => {
@@ -64,12 +66,16 @@ const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => 
           <div className="flex items-center gap-3">
             <CurrentUserSelector />
 
-            <div className="flex items-center gap-2 bg-white/10 px-3 py-1.5 rounded-full">
+            <button
+              onClick={() => setShowProfile(true)}
+              className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition-colors cursor-pointer"
+              title="Modifier mon profil"
+            >
               <Users size={16} className="text-gold" />
               <span className="text-sm">
                 {user?.name} · {isSecretary ? '🔐 Secrétaire' : '👤 Membre'}
               </span>
-            </div>
+            </button>
 
             <button
               onClick={onLogout}
@@ -88,6 +94,8 @@ const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => 
           </div>
         </div>
         
+        {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
+
         {/* Settings Modal */}
         {showSettings && (
           <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-xl text-navy p-4 z-50 animate-fade-in">

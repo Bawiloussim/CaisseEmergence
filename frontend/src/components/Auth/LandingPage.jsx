@@ -1,5 +1,8 @@
-import { useState } from 'react';
-import { Eye, EyeOff, Lock, Mail, X, TrendingUp, HandCoins, Users, ShieldCheck, ChevronRight, Sparkles } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
+import {
+  Eye, EyeOff, Lock, Mail, X, TrendingUp, HandCoins, Users, ShieldCheck,
+  ChevronLeft, ChevronRight, Sparkles, Phone, MapPin,
+} from 'lucide-react';
 import { useAuth } from './AuthContext';
 import logo from '../../assets/logo/2.jpeg';
 
@@ -23,7 +26,7 @@ function LoginModal({ onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(9,50,78,0.85)', backdropFilter: 'blur(6px)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(7,15,20,0.85)', backdropFilter: 'blur(6px)' }}>
       <div className="w-full max-w-md bg-white rounded-2xl overflow-hidden shadow-2xl relative">
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-navy z-10">
           <X size={20} />
@@ -103,7 +106,7 @@ function ValuePill({ label, sub }) {
       <div className="px-6 py-2 rounded-full font-bold text-sm tracking-widest" style={{ background: '#c48a21', color: '#072434' }}>
         {label}
       </div>
-      <p className="text-xs text-center max-w-[160px]" style={{ color: '#98afc0' }}>{sub}</p>
+      <p className="text-xs text-center max-w-40" style={{ color: '#98afc0' }}>{sub}</p>
     </div>
   );
 }
@@ -123,15 +126,49 @@ function StepCard({ number, title, text }) {
   );
 }
 
+/* ── Hero slides data ────────────────────────────────── */
+const SLIDES = [
+  { tag: '01', title: 'ÉPARGNE', caption: 'Cotisez chaque mois en toute sérénité et suivez votre épargne en temps réel.' },
+  { tag: '02', title: 'PRÊTS', caption: "Accédez à un crédit jusqu'à 150% de votre épargne accumulée." },
+  { tag: '03', title: 'SOLIDARITÉ', caption: "L'entraide communautaire au cœur de chaque décision de la caisse." },
+];
+
+/* ── Info bar items (style "free shipping / call us / location") ── */
+const INFO_ITEMS = [
+  { icon: ShieldCheck, caption: 'ESPACE SÉCURISÉ', sub: 'Authentification par token JWT' },
+  { icon: HandCoins, caption: 'COTISATIONS FLEXIBLES', sub: 'Montant variable chaque mois' },
+  { icon: Users, caption: 'GESTION SIMPLIFIÉE', sub: 'Rôles secrétaire & membres' },
+];
+
 /* ── Landing page ────────────────────────────────────── */
 const LandingPage = () => {
   const [showLogin, setShowLogin] = useState(false);
+  const [slide, setSlide] = useState(0);
+
+  const next = useCallback(() => setSlide((s) => (s + 1) % SLIDES.length), []);
+  const prev = () => setSlide((s) => (s - 1 + SLIDES.length) % SLIDES.length);
+
+  useEffect(() => {
+    const id = setInterval(next, 6000);
+    return () => clearInterval(id);
+  }, [next]);
+
+  const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
     <div className="min-h-screen font-inter" style={{ background: '#09324e' }}>
 
-      {/* ── Navbar ── */}
-      <nav className="sticky top-0 z-40 flex items-center justify-between px-8 py-4" style={{ background: 'rgba(9,50,78,0.95)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
+      {/* ── Top bar ── */}
+      <div className="hidden sm:flex items-center justify-between px-8 text-xs" style={{ background: '#072434', color: '#98afc0', height: '38px' }}>
+        <div className="flex items-center gap-6">
+          <span className="flex items-center gap-1.5"><Mail size={13} /> contact@caisseemergence.com</span>
+          <span className="flex items-center gap-1.5"><Phone size={13} /> +237 6XX XXX XXX</span>
+        </div>
+        <span className="flex items-center gap-1.5"><MapPin size={13} /> Yaoundé, Cameroun</span>
+      </div>
+
+      {/* ── Header / nav ── */}
+      <nav className="sticky top-0 z-40 flex items-center justify-between px-8 py-3" style={{ background: 'rgba(9,50,78,0.97)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
         <div className="flex items-center gap-3">
           <img src={logo} alt="Logo" className="w-10 h-10 rounded-lg object-cover" />
           <div>
@@ -139,6 +176,13 @@ const LandingPage = () => {
             <span className="text-xs tracking-widest" style={{ color: '#98afc0' }}>INNOVATION · CROISSANCE · CONFIANCE</span>
           </div>
         </div>
+
+        <div className="hidden md:flex items-center gap-8 text-sm font-medium" style={{ color: '#cfe0ea' }}>
+          {[['Accueil', 'hero'], ['Services', 'services'], ['Comment ça marche', 'comment'], ['Valeurs', 'valeurs']].map(([label, id]) => (
+            <button key={id} onClick={() => scrollTo(id)} className="hover:text-white transition-colors">{label}</button>
+          ))}
+        </div>
+
         <button onClick={() => setShowLogin(true)}
           className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all"
           style={{ background: '#c48a21', color: '#072434' }}>
@@ -146,50 +190,73 @@ const LandingPage = () => {
         </button>
       </nav>
 
-      {/* ── Hero ── */}
-      <section className="relative flex flex-col items-center justify-center text-center px-6 py-28 overflow-hidden"
-        style={{ background: 'linear-gradient(160deg, #09324e 0%, #135c60 60%, #09324e 100%)' }}>
-        {/* decorative glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] rounded-full opacity-10 pointer-events-none"
+      {/* ── Hero slider ── */}
+      <section id="hero" className="relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #09324e 0%, #135c60 65%, #09324e 100%)' }}>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-175 h-175 rounded-full opacity-10 pointer-events-none"
           style={{ background: 'radial-gradient(circle, #c48a21 0%, transparent 70%)' }} />
 
-        <div className="relative z-10 flex flex-col items-center gap-6 max-w-2xl mx-auto">
-          <img src={logo} alt="Caisse Émergence" className="w-52 rounded-2xl shadow-2xl" />
+        <div className="relative min-h-115 flex items-center px-8 md:px-20 py-20">
+          {/* prev / next arrows */}
+          <button onClick={prev} aria-label="Précédent"
+            className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 items-center justify-center w-12 h-12 rounded-full transition-colors hover:bg-white/10">
+            <ChevronLeft size={30} color="#98afc0" />
+          </button>
+          <button onClick={next} aria-label="Suivant"
+            className="hidden md:flex absolute right-4 top-1/2 -translate-y-1/2 items-center justify-center w-12 h-12 rounded-full transition-colors hover:bg-white/10">
+            <ChevronRight size={30} color="#98afc0" />
+          </button>
 
-          <div>
-            <h1 className="font-playfair font-bold text-white leading-tight" style={{ fontSize: '3rem' }}>
-              Caisse <span style={{ color: '#c48a21' }}>ÉMERGENCE</span>
-            </h1>
-            <p className="text-lg mt-2 tracking-widest font-light" style={{ color: '#56a7d2' }}>
-              INNOVATION · CROISSANCE · CONFIANCE
+          {/* caption */}
+          <div className="max-w-xl">
+            <div className="flex items-baseline gap-4 mb-4">
+              <span className="font-playfair font-bold text-white leading-none" style={{ fontSize: '5rem' }}>{SLIDES[slide].tag}</span>
+              <span className="font-playfair font-bold leading-tight" style={{ fontSize: '2rem', color: '#c48a21' }}>{SLIDES[slide].title}</span>
+            </div>
+            <p className="text-base leading-relaxed mb-8" style={{ color: '#cfe0ea' }}>
+              {SLIDES[slide].caption}
             </p>
+            <div className="flex flex-wrap gap-4">
+              <button onClick={() => setShowLogin(true)}
+                className="flex items-center gap-2 px-7 py-3.5 rounded-full font-bold text-sm shadow-xl transition-all hover:scale-105"
+                style={{ background: '#c48a21', color: '#072434' }}>
+                <Sparkles size={16} /> Accéder à l'espace membres
+              </button>
+              <button onClick={() => scrollTo('services')}
+                className="flex items-center gap-2 px-7 py-3.5 rounded-full font-bold text-sm transition-all border-2"
+                style={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff' }}>
+                En savoir plus
+              </button>
+            </div>
+
+            {/* dots */}
+            <div className="flex gap-2 mt-10">
+              {SLIDES.map((_, i) => (
+                <button key={i} onClick={() => setSlide(i)} aria-label={`Slide ${i + 1}`}
+                  className="h-1.5 rounded-full transition-all"
+                  style={{ width: i === slide ? '28px' : '10px', background: i === slide ? '#c48a21' : 'rgba(255,255,255,0.25)' }} />
+              ))}
+            </div>
           </div>
+        </div>
 
-          <p className="text-base leading-relaxed max-w-lg" style={{ color: '#98afc0' }}>
-            La plateforme de gestion collaborative pour votre caisse de solidarité — cotisations, prêts et entraide communautaire en un seul espace sécurisé.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-4 mt-2">
-            <button onClick={() => setShowLogin(true)}
-              className="flex items-center gap-2 px-8 py-4 rounded-full font-bold text-base shadow-xl transition-all hover:scale-105"
-              style={{ background: '#c48a21', color: '#072434' }}>
-              <Sparkles size={18} /> Accéder à l'espace membres
-            </button>
-          </div>
-
-          <div className="flex items-center gap-8 mt-6 pt-6" style={{ borderTop: '1px solid rgba(255,255,255,0.08)' }}>
-            {[['Épargne', 'Cotisations mensuelles'], ['Prêts', 'Jusqu\'à 150% de l\'épargne'], ['Solidarité', 'Entraide communautaire']].map(([label, sub]) => (
-              <div key={label} className="text-center">
-                <div className="font-bold text-white text-sm">{label}</div>
-                <div className="text-xs mt-0.5" style={{ color: '#98afc0' }}>{sub}</div>
+        {/* ── Info strip (overlapping bottom edge, like Tyche's main-slider-bar) ── */}
+        <div className="relative" style={{ background: '#c48a21' }}>
+          <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/25">
+            {INFO_ITEMS.map(({ icon: Icon, caption, sub }) => (
+              <div key={caption} className="flex items-center gap-4 px-8 py-5 justify-center sm:justify-start">
+                <Icon size={32} color="#072434" />
+                <div>
+                  <div className="font-bold text-sm tracking-wide" style={{ color: '#072434' }}>{caption}</div>
+                  <div className="text-xs" style={{ color: '#072434', opacity: 0.75 }}>{sub}</div>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Features ── */}
-      <section className="px-6 py-24 max-w-5xl mx-auto">
+      {/* ── Services ── */}
+      <section id="services" className="px-6 py-24 max-w-5xl mx-auto">
         <div className="text-center mb-14">
           <p className="text-xs tracking-widest font-semibold mb-3" style={{ color: '#c48a21' }}>NOS SERVICES</p>
           <h2 className="font-playfair font-bold text-white text-4xl">Tout ce dont votre caisse a besoin</h2>
@@ -205,7 +272,7 @@ const LandingPage = () => {
       </section>
 
       {/* ── How it works ── */}
-      <section className="px-6 py-20" style={{ background: 'rgba(0,0,0,0.15)' }}>
+      <section id="comment" className="px-6 py-20" style={{ background: 'rgba(0,0,0,0.15)' }}>
         <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
           <div>
             <p className="text-xs tracking-widest font-semibold mb-3" style={{ color: '#c48a21' }}>COMMENT ÇA MARCHE</p>
@@ -239,7 +306,7 @@ const LandingPage = () => {
       </section>
 
       {/* ── Values ── */}
-      <section className="px-6 py-24 text-center max-w-3xl mx-auto">
+      <section id="valeurs" className="px-6 py-24 text-center max-w-3xl mx-auto">
         <p className="text-xs tracking-widest font-semibold mb-3" style={{ color: '#c48a21' }}>NOS VALEURS</p>
         <h2 className="font-playfair font-bold text-white text-4xl mb-14">Ce qui nous définit</h2>
         <div className="flex flex-col sm:flex-row justify-center gap-10">

@@ -161,10 +161,10 @@ const LandingPage = () => {
       {/* ── Top bar ── */}
       <div className="hidden sm:flex items-center justify-between px-8 text-xs" style={{ background: '#072434', color: '#98afc0', height: '38px' }}>
         <div className="flex items-center gap-6">
-          <span className="flex items-center gap-1.5"><Mail size={13} /> contact@caisseemergence.com</span>
-          <span className="flex items-center gap-1.5"><Phone size={13} /> +237 6XX XXX XXX</span>
+          <span className="flex items-center gap-1.5"><Mail size={13} /> bawiloussimngbabou1@gmail.com</span>
+          <span className="flex items-center gap-1.5"><Phone size={13} /> +228 98462796</span>
         </div>
-        <span className="flex items-center gap-1.5"><MapPin size={13} /> Yaoundé, Cameroun</span>
+        <span className="flex items-center gap-1.5"><MapPin size={13} /> Kara, Togo</span>
       </div>
 
       {/* ── Header / nav ── */}

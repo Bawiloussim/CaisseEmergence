@@ -35,66 +35,37 @@ const MemberList = ({ isSecretary }) => {
   }
 
   const handleAddMember = async (memberData) => {
-    if (editMember) {
-      // Si ce membre a déjà un compte de connexion, on met à jour ses
-      // informations côté serveur (email, rôle, accès...).
-      if (editMember.accountId) {
-        try {
-          await api.put(`/members/${editMember.accountId}`, {
-            name: memberData.name,
-            email: memberData.email,
-            phone: memberData.phone,
-            role: memberData.role,
-            accountRole: memberData.accountRole,
-            monthlyContribution: memberData.monthlyContribution,
-            joinDate: memberData.joinDate,
-          });
-        } catch (err) {
-          alert(
-            `Le membre a été mis à jour, mais la synchronisation de son compte ` +
-            `de connexion a échoué : ${err.message}`
-          );
-        }
-      }
+  try {
+    const result = editMember
+      ? await MemberController.updateMember(editMember.id, memberData)
+      : await MemberController.addMember(memberData);
 
-      const result = MemberController.updateMember(editMember.id, memberData);
-      if (result.success) {
-        loadMembers();
-        setShowForm(false);
-        setEditMember(null);
-      }
-      return result;
-    }
-
-    // Nouveau membre : on crée d'abord son compte de connexion (email +
-    // mot de passe temporaire envoyé par email), puis sa fiche locale.
-    let accountId;
-    try {
-      const response = await api.post('/members', {
-        name: memberData.name,
-        email: memberData.email,
-        phone: memberData.phone,
-        role: memberData.role,
-        accountRole: memberData.accountRole,
-        monthlyContribution: memberData.monthlyContribution,
-        joinDate: memberData.joinDate,
-      });
-      accountId = response.member?._id || '';
-      if (response.warning) {
-        alert(response.warning);
-      }
-    } catch (err) {
-      alert(`Impossible de créer le compte de connexion de ce membre : ${err.message}`);
-      return { success: false, errors: [err.message] };
-    }
-
-    const result = MemberController.addMember({ ...memberData, accountId });
     if (result.success) {
-      loadMembers();
+      // ✅ AFFICHE LE MOT DE PASSE TEMPORAIRE (nouveau membre seulement)
+      if (!editMember && result.member) {
+        alert(
+          `✅ Membre créé avec succès !\n\n` +
+          `Email : ${result.member.email}\n\n` +
+          `Un email d'invitation sera envoyé automatiquement avec un mot de passe temporaire.\n\n` +
+          `Si l'email n'arrive pas, vérifiez le dossier Spam.`
+        );
+      }
+      
+      if (result.warning) alert(result.warning);
+      
+      // ✅ RECHARGE LES MEMBRES DEPUIS LE SERVEUR
+      await loadMembers();
+      
+      // ✅ FERME LA MODAL
       setShowForm(false);
+      setEditMember(null);
     }
     return result;
-  };
+  } catch (err) {
+    alert(`Erreur : ${err.message}`);
+    return { success: false, errors: [err.message] };
+  }
+};
 
   const handleDeleteMember = async (id) => {
     if (window.confirm('Supprimer ce membre ?')) {

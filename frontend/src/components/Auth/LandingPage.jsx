@@ -135,7 +135,7 @@ const SLIDES = [
 
 /* ── Info bar items (style "free shipping / call us / location") ── */
 const INFO_ITEMS = [
-  { icon: ShieldCheck, caption: 'ESPACE SÉCURISÉ', sub: 'Authentification par token JWT' },
+  { icon: ShieldCheck, caption: 'ESPACE SÉCURISÉ', sub: 'Connexion protégée par mot de passe' },
   { icon: HandCoins, caption: 'COTISATIONS FLEXIBLES', sub: 'Montant variable chaque mois' },
   { icon: Users, caption: 'GESTION SIMPLIFIÉE', sub: 'Rôles secrétaire & membres' },
 ];
@@ -311,7 +311,7 @@ const LandingPage = () => {
           </div>
           <div className="flex flex-col gap-4">
             {[
-              { icon: ShieldCheck, label: 'Accès sécurisé par JWT', color: '#56a7d2' },
+              { icon: ShieldCheck, label: 'Accès sécurisé par mot de passe', color: '#56a7d2' },
               { icon: HandCoins, label: 'Cotisations variables par mois', color: '#c48a21' },
               { icon: TrendingUp, label: 'Plafond de prêt calculé automatiquement', color: '#4ade80' },
               { icon: Users, label: 'Rôles secrétaire & membre', color: '#c48a21' },

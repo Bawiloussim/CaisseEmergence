@@ -120,7 +120,12 @@ class ContributionController {
     if (index === -1) return { success: false, error: 'Cotisation non trouvée' };
 
     // merge allowed fields
-    contributions[index] = { ...contributions[index], ...data };
+    contributions[index] = {
+      ...contributions[index],
+      ...data,
+      amount: Number(data.amount ?? contributions[index].amount) || 0,
+      fees: Number(data.fees ?? contributions[index].fees) || 0,
+    };
     StorageService.saveContributions(contributions);
     return { success: true, contribution: contributions[index] };
   }

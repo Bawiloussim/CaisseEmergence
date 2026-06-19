@@ -2,10 +2,10 @@ export class LoanModel {
   constructor(data) {
     this.id = data.id || Date.now();
     this.memberId = data.memberId;
-    this.amount = data.amount || 0;
-    this.duration = data.duration || 3;
-    this.interests = Math.round((data.amount || 0) * 0.1);
-    this.total = (data.amount || 0) + this.interests;
+    this.amount = Number(data.amount) || 0;
+    this.duration = Number(data.duration) || 3;
+    this.interests = Math.round(this.amount * 0.1);
+    this.total = this.amount + this.interests;
     this.monthlyPayment = Math.round(this.total / this.duration);
     this.motif = data.motif || '';
     this.status = data.status || 'pending';

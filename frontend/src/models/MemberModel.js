@@ -8,7 +8,7 @@ export class MemberModel {
     this.dob = data.dob || '';
     this.joinDate = data.joinDate || new Date().toISOString().split('T')[0];
     this.address = data.address || '';
-    this.monthlyContribution = data.monthlyContribution || 5000;
+    this.monthlyContribution = Number(data.monthlyContribution) || 5000;
     this.momoNumber = data.momoNumber || '';
     this.photo = data.photo || '';
     this.createdAt = data.createdAt || new Date().toISOString();

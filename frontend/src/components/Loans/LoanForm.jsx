@@ -19,7 +19,9 @@ const LoanForm = ({ onClose, onSubmit, members, initialData = null }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const val = name === 'memberId' ? parseInt(value || '') : value;
+    let val = value;
+    if (name === 'memberId') val = parseInt(value || '');
+    else if (name === 'amount' || name === 'duration') val = value === '' ? '' : Number(value);
     setFormData(prev => ({ ...prev, [name]: val }));
   };
 

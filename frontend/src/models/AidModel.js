@@ -2,7 +2,7 @@ export class AidModel {
   constructor(data = {}) {
     this.id = data.id || Date.now();
     this.memberId = data.memberId;
-    this.amount = data.amount || 0;
+    this.amount = Number(data.amount) || 0;
     this.motif = data.motif || '';
     this.date = data.date || new Date().toISOString().split('T')[0];
   }

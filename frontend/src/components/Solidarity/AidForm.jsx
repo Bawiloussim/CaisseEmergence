@@ -19,7 +19,8 @@ const AidForm = ({ onClose, onSubmit, members, currentFund }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const val = name === 'amount' ? (value === '' ? '' : Number(value)) : value;
+    setFormData(prev => ({ ...prev, [name]: val }));
   };
 
   const handleSubmit = (e) => {

@@ -36,6 +36,8 @@ const ContributionForm = ({ onClose, onSubmit, members, initialData }) => {
         // pré-remplir le montant du membre sauf si on édite une cotisation existante
         ...(!initialData && member ? { amount: member.monthlyContribution || 0 } : {}),
       }));
+    } else if (name === 'amount' || name === 'fees') {
+      setFormData(prev => ({ ...prev, [name]: value === '' ? '' : Number(value) }));
     } else {
       setFormData(prev => ({ ...prev, [name]: value }));
     }

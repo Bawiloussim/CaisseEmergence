@@ -49,7 +49,14 @@ class StorageService {
   }
 
   getContributions() {
-    return JSON.parse(localStorage.getItem(this.keys.CONTRIBUTIONS) || '[]');
+    const contributions = JSON.parse(localStorage.getItem(this.keys.CONTRIBUTIONS) || '[]');
+    // Corrige les anciennes données enregistrées avec amount/fees en chaîne
+    // (ex: 0 + "10000" donnait "010000" au lieu de 10000).
+    return contributions.map((c) => ({
+      ...c,
+      amount: Number(c.amount) || 0,
+      fees: Number(c.fees) || 0,
+    }));
   }
 
   saveContributions(contributions) {
@@ -57,7 +64,14 @@ class StorageService {
   }
 
   getLoans() {
-    return JSON.parse(localStorage.getItem(this.keys.LOANS) || '[]');
+    const loans = JSON.parse(localStorage.getItem(this.keys.LOANS) || '[]');
+    return loans.map((l) => ({
+      ...l,
+      amount: Number(l.amount) || 0,
+      interests: Number(l.interests) || 0,
+      total: Number(l.total) || 0,
+      monthlyPayment: Number(l.monthlyPayment) || 0,
+    }));
   }
 
   saveLoans(loans) {
@@ -65,7 +79,11 @@ class StorageService {
   }
 
   getAids() {
-    return JSON.parse(localStorage.getItem(this.keys.AIDS) || '[]');
+    const aids = JSON.parse(localStorage.getItem(this.keys.AIDS) || '[]');
+    return aids.map((a) => ({
+      ...a,
+      amount: Number(a.amount) || 0,
+    }));
   }
 
   saveAids(aids) {

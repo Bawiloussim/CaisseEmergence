@@ -74,6 +74,8 @@ h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
 
 /* KPI cards */
 .kpi-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:16px; }
+@media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
+@media (max-width: 560px) { .kpi-grid { grid-template-columns: 1fr; } }
 .kpi-card { background:#fcf9f9; border-radius: var(--radius); padding:18px; box-shadow: 0 8px 24px rgba(15,55,81,0.04); border-left:4px solid transparent; }
 .kpi-card .meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:6px; }
 .kpi-card .sub { font-size:12px; color:var(--muted); }

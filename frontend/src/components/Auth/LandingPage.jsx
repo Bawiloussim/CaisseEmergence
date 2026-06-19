@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import {
   Eye, EyeOff, Lock, Mail, X, TrendingUp, HandCoins, Users, ShieldCheck,
-  ChevronLeft, ChevronRight, Sparkles, Phone, MapPin,
+  ChevronLeft, ChevronRight, Sparkles, Phone, MapPin, Menu,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import logo from '../../assets/logo/2.jpeg';
@@ -144,6 +144,7 @@ const INFO_ITEMS = [
 const LandingPage = () => {
   const [showLogin, setShowLogin] = useState(false);
   const [slide, setSlide] = useState(0);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const next = useCallback(() => setSlide((s) => (s + 1) % SLIDES.length), []);
   const prev = () => setSlide((s) => (s - 1 + SLIDES.length) % SLIDES.length);
@@ -168,26 +169,48 @@ const LandingPage = () => {
       </div>
 
       {/* ── Header / nav ── */}
-      <nav className="sticky top-0 z-40 flex items-center justify-between px-8 py-3" style={{ background: 'rgba(9,50,78,0.97)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="flex items-center gap-3">
-          <img src={logo} alt="Logo" className="w-10 h-10 rounded-lg object-cover" />
-          <div>
-            <span className="font-playfair font-bold text-white text-lg leading-none block">Caisse <span style={{ color: '#c48a21' }}>ÉMERGENCE</span></span>
-            <span className="text-xs tracking-widest" style={{ color: '#98afc0' }}>INNOVATION · CROISSANCE · CONFIANCE</span>
+      <nav className="sticky top-0 z-40 px-4 sm:px-8 py-3" style={{ background: 'rgba(9,50,78,0.97)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3 min-w-0">
+            <img src={logo} alt="Logo" className="w-10 h-10 rounded-lg object-cover shrink-0" />
+            <div className="min-w-0">
+              <span className="font-playfair font-bold text-white text-lg leading-none block truncate">Caisse <span style={{ color: '#c48a21' }}>ÉMERGENCE</span></span>
+              <span className="text-xs tracking-widest hidden sm:block" style={{ color: '#98afc0' }}>INNOVATION · CROISSANCE · CONFIANCE</span>
+            </div>
+          </div>
+
+          <div className="hidden md:flex items-center gap-8 text-sm font-medium" style={{ color: '#cfe0ea' }}>
+            {[['Accueil', 'hero'], ['Services', 'services'], ['Comment ça marche', 'comment'], ['Valeurs', 'valeurs']].map(([label, id]) => (
+              <button key={id} onClick={() => scrollTo(id)} className="hover:text-white transition-colors">{label}</button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <button onClick={() => setShowLogin(true)}
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 rounded-full text-sm font-semibold transition-all"
+              style={{ background: '#c48a21', color: '#072434' }}>
+              <span className="hidden sm:inline">Se connecter</span>
+              <span className="sm:hidden">Connexion</span>
+              <ChevronRight size={15} />
+            </button>
+
+            <button onClick={() => setMobileMenuOpen((v) => !v)} aria-label="Menu"
+              className="md:hidden p-2 rounded-full hover:bg-white/10 transition-colors text-white">
+              {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+            </button>
           </div>
         </div>
 
-        <div className="hidden md:flex items-center gap-8 text-sm font-medium" style={{ color: '#cfe0ea' }}>
-          {[['Accueil', 'hero'], ['Services', 'services'], ['Comment ça marche', 'comment'], ['Valeurs', 'valeurs']].map(([label, id]) => (
-            <button key={id} onClick={() => scrollTo(id)} className="hover:text-white transition-colors">{label}</button>
-          ))}
-        </div>
-
-        <button onClick={() => setShowLogin(true)}
-          className="flex items-center gap-2 px-5 py-2 rounded-full text-sm font-semibold transition-all"
-          style={{ background: '#c48a21', color: '#072434' }}>
-          Se connecter <ChevronRight size={15} />
-        </button>
+        {mobileMenuOpen && (
+          <div className="md:hidden flex flex-col gap-1 pt-3 pb-1 text-sm font-medium" style={{ color: '#cfe0ea' }}>
+            {[['Accueil', 'hero'], ['Services', 'services'], ['Comment ça marche', 'comment'], ['Valeurs', 'valeurs']].map(([label, id]) => (
+              <button key={id} onClick={() => { scrollTo(id); setMobileMenuOpen(false); }}
+                className="text-left px-2 py-2 rounded hover:bg-white/5 hover:text-white transition-colors">
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
       </nav>
 
       {/* ── Hero slider ── */}
@@ -195,7 +218,7 @@ const LandingPage = () => {
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-175 h-175 rounded-full opacity-10 pointer-events-none"
           style={{ background: 'radial-gradient(circle, #c48a21 0%, transparent 70%)' }} />
 
-        <div className="relative min-h-115 flex items-center px-8 md:px-20 py-20">
+        <div className="relative min-h-115 flex items-center px-5 sm:px-8 md:px-20 py-16 sm:py-20">
           {/* prev / next arrows */}
           <button onClick={prev} aria-label="Précédent"
             className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 items-center justify-center w-12 h-12 rounded-full transition-colors hover:bg-white/10">
@@ -208,21 +231,21 @@ const LandingPage = () => {
 
           {/* caption */}
           <div className="max-w-xl">
-            <div className="flex items-baseline gap-4 mb-4">
-              <span className="font-playfair font-bold text-white leading-none" style={{ fontSize: '5rem' }}>{SLIDES[slide].tag}</span>
-              <span className="font-playfair font-bold leading-tight" style={{ fontSize: '2rem', color: '#c48a21' }}>{SLIDES[slide].title}</span>
+            <div className="flex items-baseline gap-3 sm:gap-4 mb-4 flex-wrap">
+              <span className="font-playfair font-bold text-white leading-none" style={{ fontSize: 'clamp(3rem, 12vw, 5rem)' }}>{SLIDES[slide].tag}</span>
+              <span className="font-playfair font-bold leading-tight" style={{ fontSize: 'clamp(1.25rem, 6vw, 2rem)', color: '#c48a21' }}>{SLIDES[slide].title}</span>
             </div>
             <p className="text-base leading-relaxed mb-8" style={{ color: '#cfe0ea' }}>
               {SLIDES[slide].caption}
             </p>
             <div className="flex flex-wrap gap-4">
               <button onClick={() => setShowLogin(true)}
-                className="flex items-center gap-2 px-7 py-3.5 rounded-full font-bold text-sm shadow-xl transition-all hover:scale-105"
+                className="flex items-center gap-2 px-5 sm:px-7 py-3.5 rounded-full font-bold text-sm shadow-xl transition-all hover:scale-105"
                 style={{ background: '#c48a21', color: '#072434' }}>
                 <Sparkles size={16} /> Accéder à l'espace membres
               </button>
               <button onClick={() => scrollTo('services')}
-                className="flex items-center gap-2 px-7 py-3.5 rounded-full font-bold text-sm transition-all border-2"
+                className="flex items-center gap-2 px-5 sm:px-7 py-3.5 rounded-full font-bold text-sm transition-all border-2"
                 style={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff' }}>
                 En savoir plus
               </button>
@@ -317,7 +340,7 @@ const LandingPage = () => {
       </section>
 
       {/* ── CTA banner ── */}
-      <section className="mx-6 mb-20 rounded-3xl px-10 py-16 text-center"
+      <section className="mx-4 sm:mx-6 mb-20 rounded-3xl px-6 sm:px-10 py-12 sm:py-16 text-center"
         style={{ background: 'linear-gradient(135deg, #135c60, #09324e)', border: '1px solid rgba(196,138,33,0.25)' }}>
         <h2 className="font-playfair font-bold text-white text-3xl mb-4">Prêt à rejoindre la caisse ?</h2>
         <p className="text-sm mb-8 max-w-md mx-auto" style={{ color: '#98afc0' }}>

@@ -9,6 +9,7 @@ import MemberList from './components/Members/MemberList';
 import ContributionList from './components/Contributions/ContributionList';
 import LoanList from './components/Loans/LoanList';
 import Solidarity from './components/Solidarity/Solidarity';
+import Statistics from './components/Statistics/Statistics';
 import Reports from './components/Reports/Reports';
 import { ToastProvider, useToast } from './components/UI/Toast';
 import StorageService from './services/StorageService';
@@ -43,6 +44,8 @@ function AppContent() {
         return <LoanList isSecretary={isSecretary} />;
       case 'solidarity':
         return <Solidarity isSecretary={isSecretary} />;
+      case 'statistics':
+        return <Statistics />;
       case 'reports':
         return <Reports />;
       default:

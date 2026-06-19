@@ -21,16 +21,16 @@ const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => 
 
   return (
     <header className="bg-linear-to-r from-navy to-navy/95 text-white sticky top-0 z-50 shadow-lg border-b border-navy/80">
-      <div className="max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative group">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-3 sm:py-4">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 sm:gap-4">
+            <div className="relative group shrink-0">
               {settings.logo ? (
                 <div className="relative">
-                  <img 
-                    src={settings.logo} 
-                    alt="Logo" 
-                    className="w-14 h-14 rounded-2xl object-cover border-2 border-gold"
+                  <img
+                    src={settings.logo}
+                    alt="Logo"
+                    className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover border-2 border-gold"
                   />
                   {isSecretary && (
                     <button
@@ -42,8 +42,8 @@ const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => 
                   )}
                 </div>
               ) : (
-                <div 
-                  className="w-14 h-14 rounded-full bg-linear-to-br from-gold to-gold-light flex items-center justify-center cursor-pointer"
+                <div
+                  className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-linear-to-br from-gold to-gold-light flex items-center justify-center cursor-pointer"
                   onClick={() => logoInputRef.current.click()}
                 >
                   {isSecretary ? <Upload size={24} className="text-navy" /> : <span className="text-navy font-bold text-xl">CE</span>}
@@ -57,13 +57,13 @@ const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => 
                 onChange={handleLogoUpload}
               />
             </div>
-            <div>
-              <h1 className="font-playfair text-2xl font-bold tracking-tight">{settings.associationName}</h1>
-              <p className="text-xs text-gold-light mt-1">Caisse de Solidarité & Prêt</p>
+            <div className="min-w-0">
+              <h1 className="font-playfair text-lg sm:text-2xl font-bold tracking-tight truncate">{settings.associationName}</h1>
+              <p className="text-xs text-gold-light mt-1 hidden sm:block">Caisse de Solidarité & Prêt</p>
             </div>
           </div>
-          
-          <div className="flex items-center gap-3">
+
+          <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
             <CurrentUserSelector />
 
             <button
@@ -72,17 +72,17 @@ const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => 
               title="Modifier mon profil"
             >
               <Users size={16} className="text-gold" />
-              <span className="text-sm">
+              <span className="text-sm hidden md:inline">
                 {user?.name} · {isSecretary ? '🔐 Secrétaire' : '👤 Membre'}
               </span>
             </button>
 
             <button
               onClick={onLogout}
-              className="flex items-center gap-1.5 bg-gold text-white px-4 py-2 rounded-full text-sm font-semibold hover:bg-gold-light transition-all shadow-sm"
+              className="flex items-center gap-1.5 bg-gold text-white px-3 sm:px-4 py-2 rounded-full text-sm font-semibold hover:bg-gold-light transition-all shadow-sm"
             >
               <LogOut size={16} />
-              Déconnexion
+              <span className="hidden sm:inline">Déconnexion</span>
             </button>
 
             <button
@@ -93,12 +93,12 @@ const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => 
             </button>
           </div>
         </div>
-        
+
         {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
 
         {/* Settings Modal */}
         {showSettings && (
-          <div className="absolute top-full right-0 mt-2 w-80 bg-white rounded-xl shadow-xl text-navy p-4 z-50 animate-fade-in">
+          <div className="absolute top-full right-0 mt-2 w-80 max-w-[90vw] bg-white rounded-xl shadow-xl text-navy p-4 z-50 animate-fade-in">
             <h3 className="font-semibold mb-3">Paramètres</h3>
             <div className="space-y-3">
               <div>

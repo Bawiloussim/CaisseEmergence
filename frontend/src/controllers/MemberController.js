@@ -57,22 +57,14 @@ class MemberController {
   }
 
   syncFromApi(apiMembers) {
+    // Le backend (MongoDB) est la source de vérité pour le profil du membre.
+    // On ne conserve du cache local que l'`id` numérique déjà attribué,
+    // car les cotisations/prêts stockés localement le référencent.
     const localMembers = this.getAllMembers();
     const merged = apiMembers.map((apiMember) => {
       const local = localMembers.find((m) => m.accountId === apiMember._id);
-      if (local) {
-        return {
-          ...local,
-          name: apiMember.name,
-          email: apiMember.email,
-          role: apiMember.role,
-          accountRole: apiMember.accountRole,
-          monthlyContribution: apiMember.monthlyContribution,
-          phone: apiMember.phone || local.phone,
-        };
-      }
       return {
-        id: Date.now() + Math.floor(Math.random() * 10000),
+        id: local?.id || Date.now() + Math.floor(Math.random() * 10000),
         name: apiMember.name,
         email: apiMember.email,
         phone: apiMember.phone || '',
@@ -80,13 +72,13 @@ class MemberController {
         accountRole: apiMember.accountRole || 'membre',
         monthlyContribution: apiMember.monthlyContribution || 5000,
         joinDate: apiMember.joinDate || '',
+        cni: apiMember.cni || '',
+        dob: apiMember.dob || '',
+        address: apiMember.address || '',
+        momoNumber: apiMember.momoNumber || '',
+        photo: apiMember.photo || '',
         accountId: apiMember._id,
         createdAt: apiMember.createdAt,
-        cni: '',
-        dob: '',
-        address: '',
-        momoNumber: '',
-        photo: '',
       };
     });
     StorageService.saveMembers(merged);

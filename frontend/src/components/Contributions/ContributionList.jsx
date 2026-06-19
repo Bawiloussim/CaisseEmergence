@@ -89,7 +89,7 @@ const ContributionList = ({ isSecretary }) => {
         onEditContribution={(c) => { setEditData(c); setShowForm(true); }}
       />
 
-      <div className="grid grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {Object.keys(monthlyTotals).map(month => {
           const m = monthlyTotals[month];
           return (

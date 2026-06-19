@@ -1,5 +1,5 @@
 // React import removed (not needed with new JSX transform)
-import { LayoutDashboard, Users, CreditCard, HandCoins, Heart, FileText } from 'lucide-react';
+import { LayoutDashboard, Users, CreditCard, HandCoins, Heart, FileText, BarChart3 } from 'lucide-react';
 
 const Navigation = ({ activeTab, onTabChange }) => {
   const navItems = [
@@ -8,6 +8,7 @@ const Navigation = ({ activeTab, onTabChange }) => {
     { id: 'contributions', label: 'Cotisations', icon: CreditCard },
     { id: 'loans', label: 'Prêts', icon: HandCoins },
     { id: 'solidarity', label: 'Solidarité', icon: Heart },
+    { id: 'statistics', label: 'Statistiques', icon: BarChart3 },
     { id: 'reports', label: 'Rapports', icon: FileText },
   ];
 

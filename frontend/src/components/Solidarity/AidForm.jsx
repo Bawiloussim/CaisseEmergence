@@ -60,7 +60,7 @@ const AidForm = ({ onClose, onSubmit, members, currentFund }) => {
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Montant (FCFA)</label>
             <input
@@ -89,7 +89,7 @@ const AidForm = ({ onClose, onSubmit, members, currentFund }) => {
             </select>
           </div>
 
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Note (détails)</label>
             <input
               type="text"
@@ -101,7 +101,7 @@ const AidForm = ({ onClose, onSubmit, members, currentFund }) => {
             />
           </div>
 
-          <div className="col-span-2">
+          <div className="sm:col-span-2">
             <label className="block text-sm font-medium text-gray-700 mb-1">Date</label>
             <input
               type="date"

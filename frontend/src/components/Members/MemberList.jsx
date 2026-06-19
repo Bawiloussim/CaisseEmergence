@@ -11,8 +11,10 @@ import { Plus, Search, FileText } from 'lucide-react';
 import PDFService from '../../services/PDFService';
 import StorageService from '../../services/StorageService';
 import api from '../../services/apiClient';
+import { useToast } from '../UI/Toast';
 
 const MemberList = ({ isSecretary }) => {
+  const { showToast } = useToast();
   const [members, setMembers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editMember, setEditMember] = useState(null);
@@ -35,37 +37,45 @@ const MemberList = ({ isSecretary }) => {
   }
 
   const handleAddMember = async (memberData) => {
-  try {
-    const result = editMember
-      ? await MemberController.updateMember(editMember.id, memberData)
-      : await MemberController.addMember(memberData);
+    const isNewMember = !editMember;
+    try {
+      let result;
 
-    if (result.success) {
-      // ✅ AFFICHE LE MOT DE PASSE TEMPORAIRE (nouveau membre seulement)
-      if (!editMember && result.member) {
-        alert(
-          `✅ Membre créé avec succès !\n\n` +
-          `Email : ${result.member.email}\n\n` +
-          `Un email d'invitation sera envoyé automatiquement avec un mot de passe temporaire.\n\n` +
-          `Si l'email n'arrive pas, vérifiez le dossier Spam.`
-        );
+      if (editMember) {
+        if (!editMember.accountId) {
+          showToast("Ce membre n'a pas de compte de connexion associé et ne peut pas être modifié. Supprimez-le et recréez-le.", 'error');
+          return { success: false };
+        }
+        const updated = await api.put(`/members/${editMember.accountId}`, memberData);
+        result = { success: true, member: updated };
+      } else {
+        const created = await api.post('/members', memberData);
+        result = { success: true, member: created.member, warning: created.warning };
       }
-      
-      if (result.warning) alert(result.warning);
-      
-      // ✅ RECHARGE LES MEMBRES DEPUIS LE SERVEUR
-      await loadMembers();
-      
-      // ✅ FERME LA MODAL
+
+      // ✅ FERME LA MODAL IMMÉDIATEMENT (avant toute notification)
       setShowForm(false);
       setEditMember(null);
+
+      // ✅ RECHARGE LES MEMBRES DEPUIS LE SERVEUR
+      await loadMembers();
+
+      if (result.warning) {
+        // Contient le mot de passe temporaire à communiquer manuellement :
+        // une alerte bloquante évite qu'elle disparaisse avant d'être lue.
+        alert(result.warning);
+      } else if (isNewMember && result.member) {
+        showToast(`Membre créé avec succès. Un email d'invitation a été envoyé à ${result.member.email}.`, 'success', 5000);
+      } else {
+        showToast('Membre mis à jour avec succès.', 'success');
+      }
+
+      return result;
+    } catch (err) {
+      showToast(`Erreur : ${err.message}`, 'error', 6000);
+      return { success: false, errors: [err.message] };
     }
-    return result;
-  } catch (err) {
-    alert(`Erreur : ${err.message}`);
-    return { success: false, errors: [err.message] };
-  }
-};
+  };
 
   const handleDeleteMember = async (id) => {
     if (window.confirm('Supprimer ce membre ?')) {
@@ -136,8 +146,8 @@ const MemberList = ({ isSecretary }) => {
           <p className="text-sm text-gray-500 mt-1">{members.length} membres inscrits</p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative w-72">
+        <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto">
+          <div className="relative w-full sm:w-72">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="text"

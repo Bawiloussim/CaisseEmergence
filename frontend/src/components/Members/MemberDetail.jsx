@@ -93,7 +93,7 @@ const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onReques
         {/* Calendrier des cotisations */}
         <div>
           <h4 className="font-semibold text-navy mb-3">Calendrier des cotisations 2026</h4>
-          <div className="grid grid-cols-6 gap-2">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
             {MONTHS.map(month => {
               const status = getMonthStatus(month);
               return (

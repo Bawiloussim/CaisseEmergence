@@ -1,11 +1,13 @@
 import { useState, useRef } from 'react';
-import { Users, Settings, Camera, Upload, LogOut } from 'lucide-react';
+import { Users, Settings, Camera, LogOut } from 'lucide-react';
 import ProfileModal from '../Auth/ProfileModal';
+import defaultLogo from '../../assets/logo/icon.png';
 
 const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const logoInputRef = useRef(null);
+  const logoSrc = settings.logo || defaultLogo;
 
   const handleLogoUpload = (e) => {
     const file = e.target.files[0];
@@ -24,29 +26,19 @@ const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3 sm:gap-4">
             <div className="relative group shrink-0">
-              {settings.logo ? (
-                <div className="relative">
-                  <img
-                    src={settings.logo}
-                    alt="Logo"
-                    className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover border-2 border-gold"
-                  />
-                  {isSecretary && (
-                    <button
-                      onClick={() => logoInputRef.current.click()}
-                      className="absolute inset-0 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
-                    >
-                      <Camera size={20} className="text-white" />
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <div
-                  className="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-linear-to-br from-gold to-gold-light flex items-center justify-center cursor-pointer"
+              <img
+                src={logoSrc}
+                alt="Logo"
+                className="w-11 h-11 sm:w-14 sm:h-14 rounded-2xl object-cover border-2 border-gold"
+              />
+              {isSecretary && (
+                <button
                   onClick={() => logoInputRef.current.click()}
+                  className="absolute inset-0 bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                  title="Changer le logo"
                 >
-                  {isSecretary ? <Upload size={24} className="text-navy" /> : <span className="text-navy font-bold text-xl">CE</span>}
-                </div>
+                  <Camera size={20} className="text-white" />
+                </button>
               )}
               <input
                 ref={logoInputRef}

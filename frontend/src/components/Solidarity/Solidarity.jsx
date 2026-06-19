@@ -10,6 +10,7 @@ import ActivityLogService from '../../services/ActivityLogService';
 
 const Solidarity = ({ isSecretary }) => {
   const [showForm, setShowForm] = useState(false);
+  const [editData, setEditData] = useState(null);
   const [refresh, setRefresh] = useState(0);
   const solidarityData = useMemo(() => {
     void refresh;
@@ -29,9 +30,28 @@ const Solidarity = ({ isSecretary }) => {
   const { user } = useAuth();
 
   const handleAddAid = (aidData) => {
+    const member = members.find((m) => m.id === parseInt(aidData.memberId));
+
+    if (aidData.id) {
+      const result = SolidarityController.updateAid(aidData.id, aidData);
+      if (result.success) {
+        ActivityLogService.log({
+          action: 'update',
+          resource: 'aid',
+          label: `Aide à ${member?.name || 'Inconnu'} — ${aidData.amount} FCFA (${aidData.motif})`,
+          actorName: user?.name,
+        });
+        setRefresh(prev => prev + 1);
+        setShowForm(false);
+        setEditData(null);
+      } else if (result.errors) {
+        alert('Erreur: ' + result.errors.join('\n'));
+      }
+      return result;
+    }
+
     const result = SolidarityController.addAid(aidData);
     if (result.success) {
-      const member = members.find((m) => m.id === parseInt(aidData.memberId));
       ActivityLogService.log({
         action: 'create',
         resource: 'aid',
@@ -54,14 +74,19 @@ const Solidarity = ({ isSecretary }) => {
             <h3 className="font-playfair text-lg font-bold text-navy">Historique des aides</h3>
             {isSecretary && (
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => { setEditData(null); setShowForm(true); }}
                 className="btn-gold flex items-center gap-2"
               >
                 <Plus size={16} /> Nouvelle aide
               </button>
             )}
           </div>
-          <AidHistory aids={aids} members={members} />
+          <AidHistory
+            aids={aids}
+            members={members}
+            isSecretary={isSecretary}
+            onEditAid={(aid) => { setEditData(aid); setShowForm(true); }}
+          />
         </div>
       </div>
 
@@ -122,10 +147,11 @@ const Solidarity = ({ isSecretary }) => {
 
       {showForm && (
         <AidForm
-          onClose={() => setShowForm(false)}
+          onClose={() => { setShowForm(false); setEditData(null); }}
           onSubmit={handleAddAid}
           members={members}
           currentFund={solidarityData?.total || 0}
+          initialData={editData}
         />
       )}
     </div>

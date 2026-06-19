@@ -24,6 +24,27 @@ class SolidarityController {
     return { success: true, aid };
   }
 
+  updateAid(id, data) {
+    const aids = this.getAllAids();
+    const index = aids.findIndex(a => a.id === parseInt(id));
+    if (index === -1) return { success: false, error: 'Aide non trouvée' };
+
+    const updated = {
+      ...aids[index],
+      memberId: data.memberId !== undefined ? parseInt(data.memberId) : aids[index].memberId,
+      amount: data.amount !== undefined ? Number(data.amount) || 0 : aids[index].amount,
+      motif: data.motif !== undefined ? data.motif : aids[index].motif,
+      date: data.date !== undefined ? data.date : aids[index].date,
+    };
+
+    if (!updated.memberId) return { success: false, errors: ['Membre requis'] };
+    if (updated.amount <= 0) return { success: false, errors: ['Montant invalide'] };
+
+    aids[index] = updated;
+    StorageService.saveAids(aids);
+    return { success: true, aid: updated };
+  }
+
   getSolidarityFund() {
     const contributions = ContributionController.getAllContributions();
     const feesTotal = contributions

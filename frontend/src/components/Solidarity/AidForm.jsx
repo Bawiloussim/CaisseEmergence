@@ -1,14 +1,19 @@
 import { useState } from 'react';
 import Modal from '../UI/Modal';
 
-const AidForm = ({ onClose, onSubmit, members, currentFund }) => {
-  const [formData, setFormData] = useState({
-    memberId: '',
-    amount: 10000,
-    motif: 'Santé / Hospitalisation',
-    note: '',
-    date: new Date().toISOString().split('T')[0],
-  });
+const AidForm = ({ onClose, onSubmit, members, currentFund, initialData = null }) => {
+  const [formData, setFormData] = useState(() => ({
+    memberId: initialData?.memberId || '',
+    amount: initialData?.amount ?? 10000,
+    motif: initialData?.motif || 'Santé / Hospitalisation',
+    note: initialData?.note || '',
+    date: initialData?.date || new Date().toISOString().split('T')[0],
+    id: initialData?.id || undefined,
+  }));
+
+  // En modification, le fonds affiché ne doit pas exclure le montant de
+  // cette aide elle-même (déjà déduit du solde courant).
+  const availableFund = currentFund + (initialData?.amount || 0);
 
   const motifs = [
     'Santé / Hospitalisation',
@@ -31,19 +36,19 @@ const AidForm = ({ onClose, onSubmit, members, currentFund }) => {
       alert('Veuillez sélectionner un membre');
       return;
     }
-    if (formData.amount > currentFund) {
-      alert(`Fonds insuffisants ! Disponible: ${currentFund.toLocaleString('fr-FR')} FCFA`);
+    if (formData.amount > availableFund) {
+      alert(`Fonds insuffisants ! Disponible: ${availableFund.toLocaleString('fr-FR')} FCFA`);
       return;
     }
     onSubmit(formData);
   };
 
   return (
-    <Modal onClose={onClose} title="Enregistrer une aide">
+    <Modal onClose={onClose} title={initialData ? "Modifier l'aide" : 'Enregistrer une aide'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="bg-blue-50 p-3 rounded-lg mb-2">
           <p className="text-sm text-blue-700">
-            💡 Fonds disponible: <strong>{currentFund.toLocaleString('fr-FR')} FCFA</strong>
+            💡 Fonds disponible: <strong>{availableFund.toLocaleString('fr-FR')} FCFA</strong>
           </p>
         </div>
 
@@ -121,7 +126,7 @@ const AidForm = ({ onClose, onSubmit, members, currentFund }) => {
             Annuler
           </button>
           <button type="submit" className="btn">
-            Enregistrer l'aide
+            {initialData ? 'Mettre à jour' : "Enregistrer l'aide"}
           </button>
         </div>
       </form>

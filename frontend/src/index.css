@@ -84,3 +84,10 @@ h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
 
 /* Dashboard table header rounded */
 .table-header-rounded thead tr th { border-top-left-radius:var(--radius); border-top-right-radius:var(--radius); }
+
+/* N'imprime que la carte de membre (#member-card-printable), pas le reste de la page */
+@media print {
+	body * { visibility: hidden; }
+	#member-card-printable, #member-card-printable * { visibility: visible; }
+	#member-card-printable { position: absolute; top: 0; left: 0; width: 100%; }
+}

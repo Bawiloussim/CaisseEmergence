@@ -5,9 +5,10 @@ import LoanController from '../../controllers/LoanController';
 import MemberController from '../../controllers/MemberController';
 import ContributionController from '../../controllers/ContributionController';
 import { Plus, AlertTriangle } from 'lucide-react';
-import { useAppContext } from '../../contexts/AppContext';
+import { useAuth } from '../Auth/AuthContext';
 import PDFService from '../../services/PDFService';
 import StorageService from '../../services/StorageService';
+import ActivityLogService from '../../services/ActivityLogService';
 
 const LoanList = ({ isSecretary }) => {
   const [showForm, setShowForm] = useState(false);
@@ -25,18 +26,30 @@ const LoanList = ({ isSecretary }) => {
 
   // loans and members are derived via useMemo on `refresh`
 
-  const [voteSelection, setVoteSelection] = useState({});
-  const { currentUserId } = useAppContext();
+  const { user } = useAuth();
+  // Le membre réellement connecté (compte authentifié), pour que chaque
+  // vote soit forcément celui de la personne derrière l'écran — personne
+  // ne peut voter "à la place" d'un autre membre.
+  const currentMember = useMemo(
+    () => members.find((m) => m.accountId === user?.id),
+    [members, user]
+  );
 
-  const handleCastVote = (loanId, memberId, vote) => {
-    // prefer provided memberId, fallback to currentUserId
-    const voter = memberId || currentUserId;
-    if (!voter) {
-      alert('Veuillez sélectionner un membre pour voter');
+  const handleCastVote = (loanId, vote) => {
+    if (!currentMember) {
+      alert('Votre compte membre est introuvable. Rechargez la page et réessayez.');
       return;
     }
-    const res = LoanController.addVote(loanId, voter, vote);
+    const res = LoanController.addVote(loanId, currentMember.id, vote);
     if (res.success) {
+      const loan = loans.find((l) => l.id === parseInt(loanId));
+      const member = members.find((m) => m.id === loan?.memberId);
+      ActivityLogService.log({
+        action: 'update',
+        resource: 'loan',
+        label: `Vote "${vote === 'yes' ? 'Oui' : 'Non'}" de ${currentMember.name} sur le prêt de ${member?.name || 'Inconnu'}`,
+        actorName: user?.name,
+      });
       setRefresh(prev => prev + 1);
     } else {
       alert(res.message || 'Erreur lors du vote');
@@ -48,6 +61,13 @@ const LoanList = ({ isSecretary }) => {
     if (loanData.id) {
       const res = LoanController.updateLoan(loanData.id, loanData);
       if (res.success) {
+        const member = members.find((m) => m.id === res.loan.memberId);
+        ActivityLogService.log({
+          action: 'update',
+          resource: 'loan',
+          label: `Prêt de ${member?.name || 'Inconnu'} — ${res.loan.amount} FCFA`,
+          actorName: user?.name,
+        });
         setRefresh(prev => prev + 1);
         setShowForm(false);
         setEditLoan(null);
@@ -66,6 +86,12 @@ const LoanList = ({ isSecretary }) => {
     const totalCotised = Number(summary.totalPaid || 0);
     const result = LoanController.addLoan(loanData, totalCotised);
     if (result.success) {
+      ActivityLogService.log({
+        action: 'create',
+        resource: 'loan',
+        label: `Prêt de ${member?.name || 'Inconnu'} — ${result.loan.amount} FCFA`,
+        actorName: user?.name,
+      });
       setRefresh(prev => prev + 1);
       setShowForm(false);
       // generate loan contract PDF for signature and a prefilled form
@@ -168,23 +194,45 @@ const LoanList = ({ isSecretary }) => {
                     <td className="px-4 py-3 text-center">{loan.requestDate}</td>
                       <td className="px-4 py-3">
                         {loan.status === 'pending' && (
-                          <div className="flex items-center gap-2">
-                            {currentUserId ? (
-                              <div className="text-sm text-gray-700 px-3 py-1 bg-white rounded">{members.find(m => m.id === currentUserId)?.name || 'Vous'}</div>
-                            ) : (
-                              <select
-                                value={voteSelection[loan.id] || ''}
-                                onChange={(e) => setVoteSelection(prev => ({ ...prev, [loan.id]: parseInt(e.target.value) }))}
-                                className="input text-sm"
-                              >
-                                <option value="">Votant...</option>
-                                {members.filter(m => m.id !== loan.memberId).map(m => (
-                                  <option key={m.id} value={m.id}>{m.name}</option>
-                                ))}
-                              </select>
-                            )}
-                            <button onClick={() => handleCastVote(loan.id, voteSelection[loan.id], 'yes')} className="px-3 py-1 bg-green-100 text-green-700 rounded">Oui</button>
-                            <button onClick={() => handleCastVote(loan.id, voteSelection[loan.id], 'no')} className="px-3 py-1 bg-red-100 text-red-700 rounded">Non</button>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {(() => {
+                              const yesCount = loan.votes?.filter((v) => v.vote === 'yes').length || 0;
+                              const noCount = loan.votes?.filter((v) => v.vote === 'no').length || 0;
+                              return (
+                                <span className="text-xs text-gray-500 mr-1">
+                                  {yesCount} oui · {noCount} non
+                                </span>
+                              );
+                            })()}
+                            {(() => {
+                              const existingVote = currentMember
+                                ? loan.votes?.find((v) => parseInt(v.memberId) === currentMember.id)
+                                : null;
+                              const isOwnLoan = currentMember && currentMember.id === loan.memberId;
+
+                              if (isOwnLoan) {
+                                return <span className="text-xs text-gray-400 italic">Vous ne pouvez pas voter sur votre propre demande</span>;
+                              }
+                              if (!currentMember) {
+                                return <span className="text-xs text-gray-400 italic">Connectez-vous avec un compte membre pour voter</span>;
+                              }
+                              return (
+                                <>
+                                  <button
+                                    onClick={() => handleCastVote(loan.id, 'yes')}
+                                    className={`px-3 py-1 rounded ${existingVote?.vote === 'yes' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700'}`}
+                                  >
+                                    Oui
+                                  </button>
+                                  <button
+                                    onClick={() => handleCastVote(loan.id, 'no')}
+                                    className={`px-3 py-1 rounded ${existingVote?.vote === 'no' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'}`}
+                                  >
+                                    Non
+                                  </button>
+                                </>
+                              );
+                            })()}
 
                             {isSecretary && (
                               <button onClick={() => { setEditLoan(loan); setShowForm(true); }} className="px-3 py-1 bg-gray-100 text-gray-700 rounded">Modifier</button>

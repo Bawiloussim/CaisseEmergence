@@ -1,12 +1,14 @@
-// React import removed (not needed with new JSX transform)
-import { Phone, MapPin, Calendar, IdCard, Cake, Smartphone, Trash2, Edit } from 'lucide-react';
+import { useState } from 'react';
+import { Phone, MapPin, Calendar, IdCard, Cake, Smartphone, Trash2, Edit, QrCode } from 'lucide-react';
 import Modal from '../UI/Modal';
+import MemberQRCard from './MemberQRCard';
 import ContributionController from '../../controllers/ContributionController';
 import { MONTHS, MONTHS_FULL } from '../../models/ContributionModel';
 import PDFService from '../../services/PDFService';
 import StorageService from '../../services/StorageService';
 
 const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onRequestLoan }) => {
+  const [showQRCard, setShowQRCard] = useState(false);
   const contributions = ContributionController.getContributionsByMember(member.id);
   const paidContributions = contributions.filter(c => c.status === 'paid');
   const totalCotised = paidContributions.reduce((sum, c) => sum + c.amount, 0);
@@ -113,7 +115,14 @@ const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onReques
         </div>
 
         {/* Actions (seulement pour secrétaire) */}
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-4 border-t flex-wrap">
+          <button
+            onClick={() => setShowQRCard(true)}
+            className="flex items-center gap-2 px-4 py-2 text-navy border border-navy rounded-lg hover:bg-navy hover:text-white transition-all"
+          >
+            <QrCode size={16} /> Carte de membre
+          </button>
+
           <button
             onClick={() => {
               onClose();
@@ -164,6 +173,8 @@ const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onReques
           )}
         </div>
       </div>
+
+      {showQRCard && <MemberQRCard member={member} onClose={() => setShowQRCard(false)} />}
     </Modal>
   );
 };

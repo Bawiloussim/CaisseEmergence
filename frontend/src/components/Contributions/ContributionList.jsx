@@ -5,6 +5,8 @@ import ContributionController from '../../controllers/ContributionController';
 import MemberController from '../../controllers/MemberController';
 import { Plus } from 'lucide-react';
 import { MONTHS_FULL } from '../../models/ContributionModel';
+import { useAuth } from '../Auth/AuthContext';
+import ActivityLogService from '../../services/ActivityLogService';
 
 const ContributionList = ({ isSecretary }) => {
   const [refresh, setRefresh] = useState(0);
@@ -24,12 +26,24 @@ const ContributionList = ({ isSecretary }) => {
   }, [refresh]);
   const [showForm, setShowForm] = useState(false);
   const [editData, setEditData] = useState(null);
+  const { user } = useAuth();
+
+  const logContribution = (action, contributionData) => {
+    const member = members.find((m) => m.id === parseInt(contributionData.memberId));
+    ActivityLogService.log({
+      action,
+      resource: 'contribution',
+      label: `${member?.name || 'Membre inconnu'} — ${MONTHS_FULL[contributionData.month] || contributionData.month} (${contributionData.amount} FCFA)`,
+      actorName: user?.name,
+    });
+  };
 
   const handleAddContribution = (contributionData) => {
     // If editing (has id), update directly
     if (contributionData.id) {
       const upd = ContributionController.updateContribution(contributionData.id, contributionData);
       if (upd.success) {
+        logContribution('update', contributionData);
         setRefresh(prev => prev + 1);
         setShowForm(false);
         setEditData(null);
@@ -42,6 +56,7 @@ const ContributionList = ({ isSecretary }) => {
     // otherwise try add; if exists, offer update
     const result = ContributionController.addContribution(contributionData);
     if (result.success) {
+      logContribution('create', contributionData);
       setRefresh(prev => prev + 1);
       setShowForm(false);
       return result;
@@ -53,6 +68,7 @@ const ContributionList = ({ isSecretary }) => {
         if (window.confirm('Une cotisation existe déjà pour ce membre et ce mois. Voulez-vous la mettre à jour ?')) {
           const upd = ContributionController.updateContribution(existing.id, contributionData);
           if (upd.success) {
+            logContribution('update', contributionData);
             setRefresh(prev => prev + 1);
             setShowForm(false);
           } else {

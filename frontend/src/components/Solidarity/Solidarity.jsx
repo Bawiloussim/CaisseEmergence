@@ -5,6 +5,8 @@ import AidForm from './AidForm';
 import SolidarityController from '../../controllers/SolidarityController';
 import MemberController from '../../controllers/MemberController';
 import { Plus } from 'lucide-react';
+import { useAuth } from '../Auth/AuthContext';
+import ActivityLogService from '../../services/ActivityLogService';
 
 const Solidarity = ({ isSecretary }) => {
   const [showForm, setShowForm] = useState(false);
@@ -24,9 +26,18 @@ const Solidarity = ({ isSecretary }) => {
     return MemberController.getAllMembers();
   }, [refresh]);
 
+  const { user } = useAuth();
+
   const handleAddAid = (aidData) => {
     const result = SolidarityController.addAid(aidData);
     if (result.success) {
+      const member = members.find((m) => m.id === parseInt(aidData.memberId));
+      ActivityLogService.log({
+        action: 'create',
+        resource: 'aid',
+        label: `Aide à ${member?.name || 'Inconnu'} — ${aidData.amount} FCFA (${aidData.motif})`,
+        actorName: user?.name,
+      });
       setRefresh(prev => prev + 1);
       setShowForm(false);
     }

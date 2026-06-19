@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
-import { AppProvider } from './contexts/AppContext';
 import { useAuth } from './components/Auth/AuthContext';
 import Navigation from './components/Layout/Navigation';
 import Dashboard from './components/Dashboard/Dashboard';
@@ -11,6 +10,7 @@ import LoanList from './components/Loans/LoanList';
 import Solidarity from './components/Solidarity/Solidarity';
 import Statistics from './components/Statistics/Statistics';
 import Reports from './components/Reports/Reports';
+import ActivityLog from './components/Activity/ActivityLog';
 import { ToastProvider, useToast } from './components/UI/Toast';
 import StorageService from './services/StorageService';
 
@@ -48,6 +48,8 @@ function AppContent() {
         return <Statistics />;
       case 'reports':
         return <Reports />;
+      case 'activity':
+        return isSecretary ? <ActivityLog /> : <Dashboard isSecretary={isSecretary} />;
       default:
         return <Dashboard isSecretary={isSecretary} />;
     }
@@ -74,9 +76,7 @@ function AppContent() {
 function App() {
   return (
     <ToastProvider>
-      <AppProvider>
-        <AppContent />
-      </AppProvider>
+      <AppContent />
     </ToastProvider>
   );
 }

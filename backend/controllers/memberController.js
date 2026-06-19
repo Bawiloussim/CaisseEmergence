@@ -2,6 +2,7 @@ const Member = require('../models/Member');
 const generateTempPassword = require('../utils/generatePassword');
 const sendEmail = require('../utils/sendEmail');
 const { invitationEmail } = require('../utils/emailTemplates');
+const logAction = require('../utils/logAction');
 
 // GET /api/members — accessible à tout membre connecté (lecture)
 const getMembers = async (req, res) => {
@@ -66,6 +67,12 @@ const createMember = async (req, res) => {
     mustChangePassword: true,
   });
 
+  await logAction({
+    action: 'create',
+    resourceLabel: `${member.name} (${member.email})`,
+    actor: req.user,
+  });
+
   try {
     await sendEmail({
       to: member.email,
@@ -111,6 +118,7 @@ const updateMember = async (req, res) => {
     'accountRole',
   ];
 
+  const changedFields = editableFields.filter((field) => req.body[field] !== undefined);
   editableFields.forEach((field) => {
     if (req.body[field] !== undefined) member[field] = req.body[field];
   });
@@ -122,10 +130,19 @@ const updateMember = async (req, res) => {
       const exists = await Member.findOne({ email: normalizedEmail });
       if (exists) return res.status(409).json({ message: 'Cet email est déjà utilisé par un autre membre' });
       member.email = normalizedEmail;
+      changedFields.push('email');
     }
   }
 
   await member.save();
+
+  await logAction({
+    action: 'update',
+    resourceLabel: `${member.name} (${member.email})`,
+    actor: req.user,
+    details: changedFields.length ? `Champs modifiés : ${changedFields.join(', ')}` : '',
+  });
+
   res.json(member);
 };
 
@@ -142,6 +159,12 @@ const deleteMember = async (req, res) => {
       return res.status(400).json({ message: 'Impossible de supprimer le dernier compte secrétaire' });
     }
   }
+
+  await logAction({
+    action: 'delete',
+    resourceLabel: `${member.name} (${member.email})`,
+    actor: req.user,
+  });
 
   await member.deleteOne();
   res.json({ message: 'Membre supprimé' });

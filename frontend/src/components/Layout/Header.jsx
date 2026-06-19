@@ -1,6 +1,5 @@
 import { useState, useRef } from 'react';
 import { Users, Settings, Camera, Upload, LogOut } from 'lucide-react';
-import CurrentUserSelector from './CurrentUserSelector';
 import ProfileModal from '../Auth/ProfileModal';
 
 const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => {
@@ -64,8 +63,6 @@ const Header = ({ isSecretary, user, onLogout, settings, onUpdateSettings }) => 
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
-            <CurrentUserSelector />
-
             <button
               onClick={() => setShowProfile(true)}
               className="flex items-center gap-2 bg-white/10 hover:bg-white/20 px-3 py-1.5 rounded-full transition-colors cursor-pointer"

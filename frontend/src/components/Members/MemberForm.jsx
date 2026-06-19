@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { Upload, Camera } from 'lucide-react';
 import Modal from '../UI/Modal';
+import PhotoCropper from './PhotoCropper';
 
 const MemberForm = ({ onClose, onSubmit, editingMember }) => {
   const [formData, setFormData] = useState({
@@ -21,6 +22,7 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
   const [errors, setErrors] = useState({});
   const [photoPreview, setPhotoPreview] = useState(formData.photo);
   const [submitting, setSubmitting] = useState(false);
+  const [imageToCrop, setImageToCrop] = useState(null);
   const photoInputRef = useRef(null);
 
   const roles = ['Membre actif', 'Président', 'Trésorier', 'Secrétaire'];
@@ -38,11 +40,18 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setPhotoPreview(reader.result);
-        setFormData(prev => ({ ...prev, photo: reader.result }));
+        setImageToCrop(reader.result);
       };
       reader.readAsDataURL(file);
     }
+    // permet de re-sélectionner le même fichier après annulation du recadrage
+    e.target.value = '';
+  };
+
+  const handleCropValidated = (croppedDataUrl) => {
+    setPhotoPreview(croppedDataUrl);
+    setFormData(prev => ({ ...prev, photo: croppedDataUrl }));
+    setImageToCrop(null);
   };
 
   const validate = () => {
@@ -105,6 +114,17 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
             />
           </div>
         </div>
+        {photoPreview && (
+          <div className="flex justify-center">
+            <button
+              type="button"
+              onClick={() => setImageToCrop(photoPreview)}
+              className="text-xs text-navy/80 hover:underline"
+            >
+              Recadrer la photo
+            </button>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
@@ -265,6 +285,14 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
           </button>
         </div>
       </form>
+
+      {imageToCrop && (
+        <PhotoCropper
+          image={imageToCrop}
+          onCancel={() => setImageToCrop(null)}
+          onValidate={handleCropValidated}
+        />
+      )}
     </Modal>
   );
 };

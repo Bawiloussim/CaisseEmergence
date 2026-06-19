@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   ResponsiveContainer, LineChart, Line, BarChart, Bar, PieChart, Pie, Cell,
   XAxis, YAxis, CartesianGrid, Tooltip, Legend,
@@ -40,9 +40,27 @@ const StatCard = ({ icon: Icon, label, value, color }) => {
 };
 
 const Statistics = () => {
-  const monthlyTotals = ContributionController.getMonthlyTotals();
-  const loans = LoanController.getAllLoans();
-  const members = MemberController.getAllMembers();
+  const [monthlyTotals, setMonthlyTotals] = useState({});
+  const [loans, setLoans] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [contributions, setContributions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const memberList = MemberController.getAllMembers();
+      const [totals, loanList, contribList] = await Promise.all([
+        ContributionController.getMonthlyTotals(),
+        LoanController.getAllLoans(),
+        ContributionController.getAllContributions(),
+      ]);
+      setMembers(memberList);
+      setMonthlyTotals(totals);
+      setLoans(loanList);
+      setContributions(contribList);
+      setLoading(false);
+    })();
+  }, []);
 
   const capitalEvolution = useMemo(() => {
     let cumulative = 0;
@@ -71,7 +89,12 @@ const Statistics = () => {
 
   const memberBreakdown = useMemo(() => {
     const data = members
-      .map((m) => ({ name: m.name, value: MemberController.getMemberTotalContributions(m.id) }))
+      .map((m) => ({
+        name: m.name,
+        value: contributions
+          .filter((c) => c.memberId === m.accountId && c.status === 'paid')
+          .reduce((s, c) => s + (c.amount || 0), 0),
+      }))
       .filter((d) => d.value > 0)
       .sort((a, b) => b.value - a.value);
 
@@ -79,7 +102,7 @@ const Statistics = () => {
     const top = data.slice(0, 7);
     const rest = data.slice(7).reduce((s, d) => s + d.value, 0);
     return [...top, { name: 'Autres', value: rest }];
-  }, [members]);
+  }, [members, contributions]);
 
   const stats = useMemo(() => {
     const monthsWithData = MONTHS.filter((m) => (monthlyTotals[m]?.totalAmount || 0) > 0);
@@ -90,6 +113,10 @@ const Statistics = () => {
     const totalPrets = loans.filter((l) => l.status === 'approved').reduce((s, l) => s + (l.amount || 0), 0);
     return { totalAnnuel, moyenneMensuelle, tauxRecouvrement, totalPrets };
   }, [monthlyTotals, loans]);
+
+  if (loading) {
+    return <div className="text-center py-12 text-gray-400">Chargement des statistiques…</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

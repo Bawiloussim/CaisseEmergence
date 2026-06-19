@@ -1,8 +1,7 @@
 // React import removed (not needed with new JSX transform)
 import { CheckCircle, Clock, XCircle } from 'lucide-react';
-import MemberController from '../../controllers/MemberController';
 
-const DashboardTable = ({ contributions }) => {
+const DashboardTable = ({ contributions, members }) => {
   const getStatusBadge = (status) => {
     switch(status) {
       case 'paid':
@@ -31,7 +30,7 @@ const DashboardTable = ({ contributions }) => {
           </thead>
           <tbody>
             {contributions.map((contribution) => {
-              const member = MemberController.getMemberById(contribution.memberId);
+              const member = members.find((m) => m.accountId === contribution.memberId);
               const status = getStatusBadge(contribution.status);
               const StatusIcon = status.icon;
               return (

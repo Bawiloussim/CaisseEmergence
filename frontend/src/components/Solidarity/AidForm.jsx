@@ -14,6 +14,7 @@ const AidForm = ({ onClose, onSubmit, members, currentFund, initialData = null }
   // En modification, le fonds affiché ne doit pas exclure le montant de
   // cette aide elle-même (déjà déduit du solde courant).
   const availableFund = currentFund + (initialData?.amount || 0);
+  const [submitting, setSubmitting] = useState(false);
 
   const motifs = [
     'Santé / Hospitalisation',
@@ -24,13 +25,11 @@ const AidForm = ({ onClose, onSubmit, members, currentFund, initialData = null }
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    let val = value;
-    if (name === 'memberId') val = value === '' ? '' : parseInt(value);
-    else if (name === 'amount') val = value === '' ? '' : Number(value);
+    const val = name === 'amount' ? (value === '' ? '' : Number(value)) : value;
     setFormData(prev => ({ ...prev, [name]: val }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.memberId) {
       alert('Veuillez sélectionner un membre');
@@ -40,7 +39,12 @@ const AidForm = ({ onClose, onSubmit, members, currentFund, initialData = null }
       alert(`Fonds insuffisants ! Disponible: ${availableFund.toLocaleString('fr-FR')} FCFA`);
       return;
     }
-    onSubmit(formData);
+    setSubmitting(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -63,7 +67,7 @@ const AidForm = ({ onClose, onSubmit, members, currentFund, initialData = null }
           >
             <option value="">Sélectionner un membre</option>
             {members.map(member => (
-              <option key={member.id} value={member.id}>{member.name}</option>
+              <option key={member.accountId} value={member.accountId}>{member.name}</option>
             ))}
           </select>
         </div>
@@ -122,11 +126,11 @@ const AidForm = ({ onClose, onSubmit, members, currentFund, initialData = null }
         </div>
 
         <div className="flex justify-end gap-3 pt-4">
-          <button type="button" onClick={onClose} className="btn-outline">
+          <button type="button" onClick={onClose} className="btn-outline" disabled={submitting}>
             Annuler
           </button>
-          <button type="submit" className="btn">
-            {initialData ? 'Mettre à jour' : "Enregistrer l'aide"}
+          <button type="submit" className="btn disabled:opacity-60" disabled={submitting}>
+            {submitting ? 'Enregistrement...' : (initialData ? 'Mettre à jour' : "Enregistrer l'aide")}
           </button>
         </div>
       </form>

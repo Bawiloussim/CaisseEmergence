@@ -39,8 +39,8 @@ const ContributionTable = ({ contributions, members, isSecretary = false, onEdit
   };
 
   const totals = members.reduce((acc, member) => {
-    acc.amount += getMemberTotal(member.id);
-    acc.fees += getMemberFees(member.id);
+    acc.amount += getMemberTotal(member.accountId);
+    acc.fees += getMemberFees(member.accountId);
     return acc;
   }, { amount: 0, fees: 0 });
 
@@ -60,12 +60,12 @@ const ContributionTable = ({ contributions, members, isSecretary = false, onEdit
         </thead>
         <tbody>
           {members.map(member => {
-            const totalCot = getMemberTotal(member.id);
+            const totalCot = getMemberTotal(member.accountId);
             return (
               <tr key={member.id} className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">{member.name}</td>
                 {MONTHS.map(month => {
-                  const contrib = getMonthContribution(member.id, month);
+                  const contrib = getMonthContribution(member.accountId, month);
                   return (
                     <td key={month} className="px-3 py-3 text-center">
                       <div className="flex flex-col items-center gap-1">
@@ -89,7 +89,7 @@ const ContributionTable = ({ contributions, members, isSecretary = false, onEdit
                   );
                 })}
                 <td className="px-4 py-3 text-right font-semibold">{totalCot.toLocaleString('fr-FR')} FCFA</td>
-                <td className="px-4 py-3 text-right">{getMemberFees(member.id).toLocaleString('fr-FR')} FCFA</td>
+                <td className="px-4 py-3 text-right">{getMemberFees(member.accountId).toLocaleString('fr-FR')} FCFA</td>
                 <td className="px-4 py-3 text-right text-green-600 font-semibold">{(totalCot * 1.5).toLocaleString('fr-FR')} FCFA</td>
               </tr>
             );

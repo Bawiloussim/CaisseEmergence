@@ -3,7 +3,7 @@ import { Heart } from 'lucide-react';
 
 const AidHistory = ({ aids, members, isSecretary = false, onEditAid, onDeleteAid }) => {
   const getMemberName = (memberId) => {
-    const member = members.find(m => m.id === memberId);
+    const member = members.find(m => m.accountId === memberId);
     return member?.name || 'Inconnu';
   };
 

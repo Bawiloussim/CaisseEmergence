@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import SolidarityFund from './SolidarityFund';
 import AidHistory from './AidHistory';
 import AidForm from './AidForm';
@@ -11,29 +11,33 @@ import ActivityLogService from '../../services/ActivityLogService';
 const Solidarity = ({ isSecretary }) => {
   const [showForm, setShowForm] = useState(false);
   const [editData, setEditData] = useState(null);
-  const [refresh, setRefresh] = useState(0);
-  const solidarityData = useMemo(() => {
-    void refresh;
-    return SolidarityController.getSolidarityFund();
-  }, [refresh]);
-
-  const aids = useMemo(() => {
-    void refresh;
-    return SolidarityController.getAllAids();
-  }, [refresh]);
-
-  const members = useMemo(() => {
-    void refresh;
-    return MemberController.getAllMembers();
-  }, [refresh]);
+  const [solidarityData, setSolidarityData] = useState(null);
+  const [aids, setAids] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const { user } = useAuth();
 
-  const handleAddAid = (aidData) => {
-    const member = members.find((m) => m.id === parseInt(aidData.memberId));
+  const loadData = useCallback(async () => {
+    setMembers(MemberController.getAllMembers());
+    const [fund, aidList] = await Promise.all([
+      SolidarityController.getSolidarityFund(),
+      SolidarityController.getAllAids(),
+    ]);
+    setSolidarityData(fund);
+    setAids(aidList);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleAddAid = async (aidData) => {
+    const member = members.find((m) => m.accountId === aidData.memberId);
 
     if (aidData.id) {
-      const result = SolidarityController.updateAid(aidData.id, aidData);
+      const result = await SolidarityController.updateAid(aidData.id, aidData);
       if (result.success) {
         ActivityLogService.log({
           action: 'update',
@@ -41,7 +45,7 @@ const Solidarity = ({ isSecretary }) => {
           label: `Aide à ${member?.name || 'Inconnu'} — ${aidData.amount} FCFA (${aidData.motif})`,
           actorName: user?.name,
         });
-        setRefresh(prev => prev + 1);
+        await loadData();
         setShowForm(false);
         setEditData(null);
       } else if (result.errors) {
@@ -50,7 +54,7 @@ const Solidarity = ({ isSecretary }) => {
       return result;
     }
 
-    const result = SolidarityController.addAid(aidData);
+    const result = await SolidarityController.addAid(aidData);
     if (result.success) {
       ActivityLogService.log({
         action: 'create',
@@ -58,18 +62,20 @@ const Solidarity = ({ isSecretary }) => {
         label: `Aide à ${member?.name || 'Inconnu'} — ${aidData.amount} FCFA (${aidData.motif})`,
         actorName: user?.name,
       });
-      setRefresh(prev => prev + 1);
+      await loadData();
       setShowForm(false);
+    } else if (result.errors) {
+      alert('Erreur: ' + result.errors.join('\n'));
     }
     return result;
   };
 
-  const handleDeleteAid = (aid) => {
-    const member = members.find((m) => m.id === aid.memberId);
+  const handleDeleteAid = async (aid) => {
+    const member = members.find((m) => m.accountId === aid.memberId);
     if (!window.confirm(`Supprimer l'aide de ${aid.amount.toLocaleString('fr-FR')} FCFA pour ${member?.name || 'ce membre'} ?`)) {
       return;
     }
-    const result = SolidarityController.deleteAid(aid.id);
+    const result = await SolidarityController.deleteAid(aid.id);
     if (result.success) {
       ActivityLogService.log({
         action: 'delete',
@@ -77,15 +83,19 @@ const Solidarity = ({ isSecretary }) => {
         label: `Aide à ${member?.name || 'Inconnu'} — ${aid.amount} FCFA supprimée`,
         actorName: user?.name,
       });
-      setRefresh(prev => prev + 1);
+      await loadData();
     }
   };
+
+  if (loading) {
+    return <div className="text-center py-12 text-gray-400">Chargement de la solidarité…</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <SolidarityFund data={solidarityData} />
-        
+
         <div className="card">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-playfair text-lg font-bold text-navy">Historique des aides</h3>

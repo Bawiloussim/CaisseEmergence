@@ -116,7 +116,7 @@ class PDFService {
     doc.text('État détaillé par membre', 14, nextY);
 
     const memberRows = (members || []).map((m, i) => {
-      const memberCots = contributions.filter(c => (c.member?._id || c.member) === m._id && c.status === 'paid');
+      const memberCots = contributions.filter(c => c.memberId === m.accountId && c.status === 'paid');
       const totalCot = memberCots.reduce((s, c) => s + (c.amount || 0), 0);
       const totalFee = memberCots.reduce((s, c) => s + (c.fees || 0), 0);
       return [
@@ -152,7 +152,7 @@ class PDFService {
       body: members.map((m, i) => [
         i + 1, m.name, m.role, m.phone || '—', m.cni || '—',
         m.joinDate ? new Date(m.joinDate).toLocaleDateString('fr-FR') : '—',
-        this.formatCurrency((m.cotisationMensuelle || 5000) + 300)
+        this.formatCurrency((m.monthlyContribution || 5000) + 300)
       ]),
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [13, 35, 64], textColor: [255, 255, 255] },
@@ -174,11 +174,11 @@ class PDFService {
     const rows = (members || []).map(m => {
       const row = [m.name];
       monthList.forEach(month => {
-        const c = (contributions || []).find(x => (x.member?._id || x.member) === m._id && x.month === month);
+        const c = (contributions || []).find(x => x.memberId === m.accountId && x.month === month);
         if (!c) row.push('—');
         else row.push(c.status === 'paid' ? `OK ${(c.amount/1000).toFixed(0)}k` : (c.status === 'late' ? 'RETARD' : 'ATTENTE'));
       });
-      const paidCots = (contributions || []).filter(c => (c.member?._id || c.member) === m._id && c.status === 'paid');
+      const paidCots = (contributions || []).filter(c => c.memberId === m.accountId && c.status === 'paid');
       const totalCot = paidCots.reduce((s, c) => s + (c.amount || 0), 0);
       const totalFee = paidCots.reduce((s, c) => s + (c.fees || 0), 0);
       row.push(this.formatCurrency(totalCot), this.formatCurrency(totalFee), this.formatCurrency(totalCot * 1.5));
@@ -231,7 +231,7 @@ class PDFService {
       body: [
         ['Art. 1 — Montant du prêt', 'Capital accordé (max 150% du solde cotisé)', this.formatCurrency(loan.amount)],
         ['Art. 2 — Intérêts', `Taux fixe de ${loan.interestRate || 10}%`, this.formatCurrency(loan.interests)],
-        ['Art. 3 — Total dû', 'Capital + intérêts', this.formatCurrency(loan.totalDue)],
+        ['Art. 3 — Total dû', 'Capital + intérêts', this.formatCurrency(loan.total)],
         ['Art. 4 — Durée', `${loan.duration} mois`, ''],
         ['Art. 5 — Mensualité', 'Remboursement mensuel', this.formatCurrency(loan.monthlyPayment)],
         ['Art. 6 — Motif', loan.motif || '—', ''],
@@ -388,7 +388,7 @@ class PDFService {
     makeField('duration', MARGIN + (col3W + 12) * 2, y, col3W, 'Durée (mois, max 3)', loan?.duration ? String(loan.duration) : '');
     y -= 42;
     makeField('interests', MARGIN, y, col3W, 'Intérêts calculés (FCFA)', loan?.interests ? this.formatCurrency(loan.interests).replace(' FCFA','') : '');
-    makeField('totalDue', MARGIN + col3W + 12, y, col3W, 'Total à rembourser (FCFA)', loan?.totalDue ? this.formatCurrency(loan.totalDue).replace(' FCFA','') : '');
+    makeField('totalDue', MARGIN + col3W + 12, y, col3W, 'Total à rembourser (FCFA)', loan?.total ? this.formatCurrency(loan.total).replace(' FCFA','') : '');
     makeField('monthlyPayment', MARGIN + (col3W + 12) * 2, y, col3W, 'Mensualité (FCFA)', loan?.monthlyPayment ? this.formatCurrency(loan.monthlyPayment).replace(' FCFA','') : '');
     y -= 42;
     makeField('motif', MARGIN, y - 38, CONTENT_W, 'Motif détaillé de la demande', loan?.motif || '', { multiline: true, height: 60 });

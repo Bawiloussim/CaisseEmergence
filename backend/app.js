@@ -3,6 +3,9 @@ const cors = require('cors');
 const authRoutes = require('./routes/authRoutes');
 const memberRoutes = require('./routes/memberRoutes');
 const auditLogRoutes = require('./routes/auditLogRoutes');
+const contributionRoutes = require('./routes/contributionRoutes');
+const loanRoutes = require('./routes/loanRoutes');
+const aidRoutes = require('./routes/aidRoutes');
 
 const app = express();
 
@@ -14,6 +17,9 @@ app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/audit-logs', auditLogRoutes);
+app.use('/api/contributions', contributionRoutes);
+app.use('/api/loans', loanRoutes);
+app.use('/api/aids', aidRoutes);
 
 // 404
 app.use((req, res) => {

@@ -1,31 +1,30 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import ContributionController from '../../controllers/ContributionController';
 
 const LoanSimulator = ({ members }) => {
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [amount, setAmount] = useState(50000);
   const [duration, setDuration] = useState(3);
-  const result = useMemo(() => {
-    if (!selectedMemberId || amount <= 0) return null;
-    const summary = ContributionController.getMemberContributionSummary(parseInt(selectedMemberId)) || { totalPaid: 0 };
-    const totalCotised = Number(summary.totalPaid || 0);
-    const maxLoan = totalCotised * 1.5;
-    const isValid = amount <= maxLoan;
-    const interests = Math.round(amount * 0.1);
-    const total = amount + interests;
-    const monthly = Math.round(total / duration);
+  const [result, setResult] = useState(null);
 
-    return {
-      totalCotised,
-      maxLoan,
-      isValid,
-      interests,
-      total,
-      monthly,
-    };
+  useEffect(() => {
+    if (!selectedMemberId || amount <= 0) {
+      setResult(null);
+      return;
+    }
+    let cancelled = false;
+    ContributionController.getMemberContributionSummary(selectedMemberId).then((summary) => {
+      if (cancelled) return;
+      const totalCotised = Number(summary?.totalPaid || 0);
+      const maxLoan = totalCotised * 1.5;
+      const isValid = amount <= maxLoan;
+      const interests = Math.round(amount * 0.1);
+      const total = amount + interests;
+      const monthly = Math.round(total / duration);
+      setResult({ totalCotised, maxLoan, isValid, interests, total, monthly });
+    });
+    return () => { cancelled = true; };
   }, [selectedMemberId, amount, duration]);
-
-  // result is computed via useMemo above
 
   return (
     <div className="bg-linear-to-r from-navy to-navy/90 text-white rounded-xl p-6 shadow-lg">
@@ -40,7 +39,7 @@ const LoanSimulator = ({ members }) => {
           >
             <option value="" className="text-navy">Sélectionner un membre</option>
             {members.map(member => (
-              <option key={member.id} value={member.id} className="text-navy">{member.name}</option>
+              <option key={member.accountId} value={member.accountId} className="text-navy">{member.name}</option>
             ))}
           </select>
         </div>
@@ -53,7 +52,7 @@ const LoanSimulator = ({ members }) => {
             onChange={(e) => setAmount(parseInt(e.target.value) || 0)}
             className="w-full px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-white"
             min="5000"
-            step="5000"
+            step="1"
           />
         </div>
 

@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ContributionTable from './ContributionTable';
 import ContributionForm from './ContributionForm';
 import ContributionController from '../../controllers/ContributionController';
@@ -9,27 +9,31 @@ import { useAuth } from '../Auth/AuthContext';
 import ActivityLogService from '../../services/ActivityLogService';
 
 const ContributionList = ({ isSecretary }) => {
-  const [refresh, setRefresh] = useState(0);
-  const contributions = useMemo(() => {
-    void refresh;
-    return ContributionController.getAllContributions();
-  }, [refresh]);
-
-  const monthlyTotals = useMemo(() => {
-    void refresh;
-    return ContributionController.getMonthlyTotals();
-  }, [refresh]);
-
-  const members = useMemo(() => {
-    void refresh;
-    return MemberController.getAllMembers();
-  }, [refresh]);
+  const [contributions, setContributions] = useState([]);
+  const [monthlyTotals, setMonthlyTotals] = useState({});
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editData, setEditData] = useState(null);
   const { user } = useAuth();
 
+  const loadData = useCallback(async () => {
+    setMembers(MemberController.getAllMembers());
+    const [contribs, totals] = await Promise.all([
+      ContributionController.getAllContributions(),
+      ContributionController.getMonthlyTotals(),
+    ]);
+    setContributions(contribs);
+    setMonthlyTotals(totals);
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
   const logContribution = (action, contributionData) => {
-    const member = members.find((m) => m.id === parseInt(contributionData.memberId));
+    const member = members.find((m) => m.accountId === contributionData.memberId);
     ActivityLogService.log({
       action,
       resource: 'contribution',
@@ -38,13 +42,13 @@ const ContributionList = ({ isSecretary }) => {
     });
   };
 
-  const handleAddContribution = (contributionData) => {
-    // If editing (has id), update directly
+  const handleAddContribution = async (contributionData) => {
+    // Édition (a un id) : mise à jour directe
     if (contributionData.id) {
-      const upd = ContributionController.updateContribution(contributionData.id, contributionData);
+      const upd = await ContributionController.updateContribution(contributionData.id, contributionData);
       if (upd.success) {
         logContribution('update', contributionData);
-        setRefresh(prev => prev + 1);
+        await loadData();
         setShowForm(false);
         setEditData(null);
       } else {
@@ -53,23 +57,23 @@ const ContributionList = ({ isSecretary }) => {
       return upd;
     }
 
-    // otherwise try add; if exists, offer update
-    const result = ContributionController.addContribution(contributionData);
+    // Sinon on tente la création ; si elle existe déjà, on propose la mise à jour
+    const result = await ContributionController.addContribution(contributionData);
     if (result.success) {
       logContribution('create', contributionData);
-      setRefresh(prev => prev + 1);
+      await loadData();
       setShowForm(false);
       return result;
     }
 
     if (result.error && result.error.toLowerCase().includes('déjà')) {
-      const existing = ContributionController.getContributionByMemberAndMonth(contributionData.memberId, contributionData.month);
+      const existing = await ContributionController.getContributionByMemberAndMonth(contributionData.memberId, contributionData.month);
       if (existing) {
         if (window.confirm('Une cotisation existe déjà pour ce membre et ce mois. Voulez-vous la mettre à jour ?')) {
-          const upd = ContributionController.updateContribution(existing.id, contributionData);
+          const upd = await ContributionController.updateContribution(existing.id, contributionData);
           if (upd.success) {
             logContribution('update', contributionData);
-            setRefresh(prev => prev + 1);
+            await loadData();
             setShowForm(false);
           } else {
             alert(upd.error || 'Erreur lors de la mise à jour');
@@ -77,17 +81,19 @@ const ContributionList = ({ isSecretary }) => {
           return upd;
         }
       }
+    } else {
+      alert(result.error || (result.errors && result.errors.join('\n')) || 'Erreur lors de l\'enregistrement');
     }
 
     return result;
   };
 
-  const handleDeleteContribution = (contribution) => {
-    const member = members.find((m) => m.id === parseInt(contribution.memberId));
+  const handleDeleteContribution = async (contribution) => {
+    const member = members.find((m) => m.accountId === contribution.memberId);
     if (!window.confirm(`Supprimer la cotisation de ${member?.name || 'ce membre'} pour ${MONTHS_FULL[contribution.month] || contribution.month} (${contribution.amount.toLocaleString('fr-FR')} FCFA) ?`)) {
       return;
     }
-    const result = ContributionController.deleteContribution(contribution.id);
+    const result = await ContributionController.deleteContribution(contribution.id);
     if (result.success) {
       ActivityLogService.log({
         action: 'delete',
@@ -95,11 +101,13 @@ const ContributionList = ({ isSecretary }) => {
         label: `Cotisation de ${member?.name || 'Inconnu'} — ${MONTHS_FULL[contribution.month] || contribution.month} (${contribution.amount} FCFA) supprimée`,
         actorName: user?.name,
       });
-      setRefresh(prev => prev + 1);
+      await loadData();
     }
   };
 
-  // editing is handled by opening the form and passing `initialData` prop when needed
+  if (loading) {
+    return <div className="text-center py-12 text-gray-400">Chargement des cotisations…</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">

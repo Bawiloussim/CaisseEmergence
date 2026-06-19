@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Phone, MapPin, Calendar, IdCard, Cake, Smartphone, Trash2, Edit, QrCode } from 'lucide-react';
 import Modal from '../UI/Modal';
 import MemberQRCard from './MemberQRCard';
@@ -9,7 +9,12 @@ import StorageService from '../../services/StorageService';
 
 const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onRequestLoan }) => {
   const [showQRCard, setShowQRCard] = useState(false);
-  const contributions = ContributionController.getContributionsByMember(member.id);
+  const [contributions, setContributions] = useState([]);
+
+  useEffect(() => {
+    ContributionController.getContributionsByMember(member.accountId).then(setContributions);
+  }, [member.accountId]);
+
   const paidContributions = contributions.filter(c => c.status === 'paid');
   const totalCotised = paidContributions.reduce((sum, c) => sum + c.amount, 0);
   const maxLoan = totalCotised * 1.5;

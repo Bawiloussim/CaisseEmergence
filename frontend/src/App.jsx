@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import { useAuth } from './components/Auth/AuthContext';
@@ -13,6 +13,9 @@ import Reports from './components/Reports/Reports';
 import ActivityLog from './components/Activity/ActivityLog';
 import { ToastProvider, useToast } from './components/UI/Toast';
 import StorageService from './services/StorageService';
+import MemberController from './controllers/MemberController';
+import MigrationService from './services/MigrationService';
+import api from './services/apiClient';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -20,6 +23,29 @@ function AppContent() {
   const isSecretary = isSecretaire;
   const [settings, setSettings] = useState(() => StorageService.getSettings());
   const { showToast } = useToast();
+
+  // Synchronise la liste des membres puis migre une fois pour toutes les
+  // cotisations/prêts/aides qui ne vivaient jusqu'ici que dans le
+  // navigateur du secrétaire, pour qu'elles deviennent visibles par tous.
+  useEffect(() => {
+    if (!user) return;
+    (async () => {
+      try {
+        const apiMembers = await api.get('/members');
+        MemberController.syncFromApi(apiMembers);
+      } catch (err) {
+        console.error('Échec de la synchronisation des membres', err);
+      }
+      try {
+        const result = await MigrationService.migrateIfNeeded(isSecretary);
+        if (result?.migrated) {
+          showToast(`${result.migrated} élément(s) historique(s) synchronisé(s) avec le serveur.`, 'success', 6000);
+        }
+      } catch (err) {
+        console.error('Échec de la migration des données locales', err);
+      }
+    })();
+  }, [user, isSecretary, showToast]);
 
   const handleLogout = () => {
     showToast('Vous avez été déconnecté', 'info');

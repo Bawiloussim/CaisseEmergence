@@ -14,11 +14,7 @@ const ContributionForm = ({ onClose, onSubmit, members, initialData }) => {
     ...(initialData || {}),
   }));
 
-  // update when editing an existing contribution
-  useState(() => {
-    // no-op to keep ESLint happy; initial state set above
-    return null;
-  });
+  const [submitting, setSubmitting] = useState(false);
 
   const months = [
     'JUIN', 'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE',
@@ -28,11 +24,10 @@ const ContributionForm = ({ onClose, onSubmit, members, initialData }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'memberId') {
-      const id = value === '' ? '' : parseInt(value);
-      const member = members.find(m => m.id === id);
+      const member = members.find(m => m.accountId === value);
       setFormData(prev => ({
         ...prev,
-        memberId: id,
+        memberId: value,
         // pré-remplir le montant du membre sauf si on édite une cotisation existante
         ...(!initialData && member ? { amount: member.monthlyContribution || 0 } : {}),
       }));
@@ -43,13 +38,18 @@ const ContributionForm = ({ onClose, onSubmit, members, initialData }) => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.memberId) {
       alert('Veuillez sélectionner un membre');
       return;
     }
-    onSubmit(formData);
+    setSubmitting(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -66,7 +66,7 @@ const ContributionForm = ({ onClose, onSubmit, members, initialData }) => {
           >
             <option value="">Sélectionner un membre</option>
             {members.map(member => (
-              <option key={member.id} value={member.id}>{member.name}</option>
+              <option key={member.accountId} value={member.accountId}>{member.name}</option>
             ))}
           </select>
         </div>
@@ -164,11 +164,11 @@ const ContributionForm = ({ onClose, onSubmit, members, initialData }) => {
         </div>
 
         <div className="flex justify-end gap-3 pt-4">
-          <button type="button" onClick={onClose} className="btn-outline">
+          <button type="button" onClick={onClose} className="btn-outline" disabled={submitting}>
             Annuler
           </button>
-          <button type="submit" className="btn-primary">
-            Enregistrer
+          <button type="submit" className="btn-primary disabled:opacity-60" disabled={submitting}>
+            {submitting ? 'Enregistrement...' : 'Enregistrer'}
           </button>
         </div>
       </form>

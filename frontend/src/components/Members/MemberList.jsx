@@ -4,7 +4,6 @@ import MemberForm from './MemberForm';
 import MemberDetail from './MemberDetail';
 import LoanForm from '../Loans/LoanForm';
 import LoanController from '../../controllers/LoanController';
-import ContributionController from '../../controllers/ContributionController';
 import MemberController from '../../controllers/MemberController';
 import Modal from '../UI/Modal';
 import { Plus, Search, FileText } from 'lucide-react';
@@ -100,13 +99,11 @@ const MemberList = ({ isSecretary }) => {
     setShowLoanForm(true);
   };
 
-  const handleAddLoan = (loanData) => {
+  const handleAddLoan = async (loanData) => {
     // ensure memberId
-    if (!loanData.memberId) loanData.memberId = loanMember?.id;
-    const member = MemberController.getMemberById(loanData.memberId);
-    const summary = ContributionController.getMemberContributionSummary(member.id) || { totalPaid: 0 };
-    const totalCotised = Number(summary.totalPaid || 0);
-    const result = LoanController.addLoan(loanData, totalCotised);
+    if (!loanData.memberId) loanData.memberId = loanMember?.accountId;
+    const member = MemberController.getMemberByAccountId(loanData.memberId);
+    const result = await LoanController.addLoan(loanData);
     if (result.success) {
       setShowLoanForm(false);
       setLoanMember(null);

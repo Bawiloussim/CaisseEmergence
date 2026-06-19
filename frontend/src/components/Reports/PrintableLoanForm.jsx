@@ -2,11 +2,9 @@ import { useState } from 'react';
 import Modal from '../UI/Modal';
 import PDFService from '../../services/PDFService';
 import MemberController from '../../controllers/MemberController';
-import StorageService from '../../services/StorageService';
 
 const PrintableLoanForm = ({ onClose, prefillMember = null, prefillLoan = null }) => {
   const members = MemberController.getAllMembers();
-  const settings = StorageService.getSettings();
 
   const [form, setForm] = useState(() => ({
     memberId: prefillMember?.id || prefillLoan?.memberId || '',
@@ -53,7 +51,7 @@ const PrintableLoanForm = ({ onClose, prefillMember = null, prefillLoan = null }
     const member = members.find(m => m.id === parseInt(form.memberId)) || { name: form.beneficiaryName, phone: form.phone };
     try {
       // use fillable PDF generation
-      await PDFService.generateLoanFormFillable(member, settings, loanObj);
+      await PDFService.generateLoanFormFillable(member, loanObj);
       // keep modal open so user can repeat if needed
     } catch (err) {
       console.error('Erreur génération formulaire prérempli', err);

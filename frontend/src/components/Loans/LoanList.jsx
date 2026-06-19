@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import LoanSimulator from './LoanSimilator';
 import LoanForm from './LoanForm';
 import LoanController from '../../controllers/LoanController';
@@ -13,18 +13,10 @@ import ActivityLogService from '../../services/ActivityLogService';
 const LoanList = ({ isSecretary }) => {
   const [showForm, setShowForm] = useState(false);
   const [editLoan, setEditLoan] = useState(null);
-  const [refresh, setRefresh] = useState(0);
-  const loans = useMemo(() => {
-    void refresh;
-    return LoanController.getAllLoans();
-  }, [refresh]);
-
-  const members = useMemo(() => {
-    void refresh;
-    return MemberController.getAllMembers();
-  }, [refresh]);
-
-  // loans and members are derived via useMemo on `refresh`
+  const [loans, setLoans] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [ceilings, setCeilings] = useState({});
+  const [loading, setLoading] = useState(true);
 
   const { user } = useAuth();
   // Le membre réellement connecté (compte authentifié), pour que chaque
@@ -35,33 +27,49 @@ const LoanList = ({ isSecretary }) => {
     [members, user]
   );
 
-  const handleCastVote = (loanId, vote) => {
+  const loadData = useCallback(async () => {
+    const memberList = MemberController.getAllMembers();
+    setMembers(memberList);
+    const loanList = await LoanController.getAllLoans();
+    setLoans(loanList);
+
+    const ceilingEntries = await Promise.all(
+      memberList.map(async (m) => [m.accountId, await ContributionController.computeLoanCeiling(m.accountId)])
+    );
+    setCeilings(Object.fromEntries(ceilingEntries));
+    setLoading(false);
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleCastVote = async (loanId, vote) => {
     if (!currentMember) {
       alert('Votre compte membre est introuvable. Rechargez la page et réessayez.');
       return;
     }
-    const res = LoanController.addVote(loanId, currentMember.id, vote);
+    const res = await LoanController.addVote(loanId, vote);
     if (res.success) {
-      const loan = loans.find((l) => l.id === parseInt(loanId));
-      const member = members.find((m) => m.id === loan?.memberId);
+      const member = members.find((m) => m.accountId === res.loan.memberId);
       ActivityLogService.log({
         action: 'update',
         resource: 'loan',
         label: `Vote "${vote === 'yes' ? 'Oui' : 'Non'}" de ${currentMember.name} sur le prêt de ${member?.name || 'Inconnu'}`,
         actorName: user?.name,
       });
-      setRefresh(prev => prev + 1);
+      await loadData();
     } else {
       alert(res.message || 'Erreur lors du vote');
     }
   };
 
-  const handleDeleteLoan = (loan) => {
-    const member = members.find((m) => m.id === loan.memberId);
+  const handleDeleteLoan = async (loan) => {
+    const member = members.find((m) => m.accountId === loan.memberId);
     if (!window.confirm(`Supprimer la demande de prêt de ${member?.name || 'ce membre'} (${loan.amount.toLocaleString('fr-FR')} FCFA) ?`)) {
       return;
     }
-    const res = LoanController.deleteLoan(loan.id);
+    const res = await LoanController.deleteLoan(loan.id);
     if (res.success) {
       ActivityLogService.log({
         action: 'delete',
@@ -69,23 +77,23 @@ const LoanList = ({ isSecretary }) => {
         label: `Prêt de ${member?.name || 'Inconnu'} — ${loan.amount} FCFA supprimé`,
         actorName: user?.name,
       });
-      setRefresh(prev => prev + 1);
+      await loadData();
     }
   };
 
-  const handleAddLoan = (loanData) => {
-    // If editing existing loan
+  const handleAddLoan = async (loanData) => {
+    // Édition d'un prêt existant
     if (loanData.id) {
-      const res = LoanController.updateLoan(loanData.id, loanData);
+      const res = await LoanController.updateLoan(loanData.id, loanData);
       if (res.success) {
-        const member = members.find((m) => m.id === res.loan.memberId);
+        const member = members.find((m) => m.accountId === res.loan.memberId);
         ActivityLogService.log({
           action: 'update',
           resource: 'loan',
           label: `Prêt de ${member?.name || 'Inconnu'} — ${res.loan.amount} FCFA`,
           actorName: user?.name,
         });
-        setRefresh(prev => prev + 1);
+        await loadData();
         setShowForm(false);
         setEditLoan(null);
         return res;
@@ -98,10 +106,8 @@ const LoanList = ({ isSecretary }) => {
       return res;
     }
 
-    const member = MemberController.getMemberById(loanData.memberId);
-    const summary = ContributionController.getMemberContributionSummary(member.id) || { totalPaid: 0 };
-    const totalCotised = Number(summary.totalPaid || 0);
-    const result = LoanController.addLoan(loanData, totalCotised);
+    const member = MemberController.getMemberByAccountId(loanData.memberId);
+    const result = await LoanController.addLoan(loanData);
     if (result.success) {
       ActivityLogService.log({
         action: 'create',
@@ -109,9 +115,9 @@ const LoanList = ({ isSecretary }) => {
         label: `Prêt de ${member?.name || 'Inconnu'} — ${result.loan.amount} FCFA`,
         actorName: user?.name,
       });
-      setRefresh(prev => prev + 1);
+      await loadData();
       setShowForm(false);
-      // generate loan contract PDF for signature and a prefilled form
+      // génère le contrat PDF pour signature et un formulaire pré-rempli
       try {
         PDFService.generateLoanContract(result.loan, member, StorageService.getSettings());
       } catch (err) {
@@ -126,7 +132,6 @@ const LoanList = ({ isSecretary }) => {
       return result;
     }
 
-    // show errors to user
     if (result.errors && result.errors.length) {
       alert('Erreur lors de l\'enregistrement du prêt:\n' + result.errors.join('\n'));
     } else if (result.message || result.error) {
@@ -148,6 +153,10 @@ const LoanList = ({ isSecretary }) => {
     }
   };
 
+  if (loading) {
+    return <div className="text-center py-12 text-gray-400">Chargement des prêts…</div>;
+  }
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="bg-yellow-50 border-l-4 border-yellow-500 p-4 rounded-r-lg">
@@ -162,7 +171,7 @@ const LoanList = ({ isSecretary }) => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <LoanSimulator members={members} />
-        
+
         {isSecretary && (
           <div className="card">
             <button
@@ -196,12 +205,12 @@ const LoanList = ({ isSecretary }) => {
             </thead>
             <tbody>
               {loans.map(loan => {
-                const member = members.find(m => m.id === loan.memberId);
+                const member = members.find(m => m.accountId === loan.memberId);
                 return (
                   <tr key={loan.id} className="border-b border-gray-100 hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium">{member?.name || 'Inconnu'}</td>
                       <td className="px-4 py-3 text-right">{loan.amount.toLocaleString('fr-FR')} FCFA</td>
-                      <td className="px-4 py-3 text-right font-medium text-green-600">{ContributionController.computeLoanCeiling(loan.memberId).toLocaleString('fr-FR')} FCFA</td>
+                      <td className="px-4 py-3 text-right font-medium text-green-600">{(ceilings[loan.memberId] || 0).toLocaleString('fr-FR')} FCFA</td>
                       <td className="px-4 py-3 text-right">{loan.interests.toLocaleString('fr-FR')} FCFA</td>
                       <td className="px-4 py-3 text-right font-semibold">{loan.total.toLocaleString('fr-FR')} FCFA</td>
                     <td className="px-4 py-3 text-right">{loan.monthlyPayment.toLocaleString('fr-FR')} FCFA</td>
@@ -224,9 +233,9 @@ const LoanList = ({ isSecretary }) => {
                               })()}
                               {(() => {
                                 const existingVote = currentMember
-                                  ? loan.votes?.find((v) => parseInt(v.memberId) === currentMember.id)
+                                  ? loan.votes?.find((v) => v.memberId === currentMember.accountId)
                                   : null;
-                                const isOwnLoan = currentMember && currentMember.id === loan.memberId;
+                                const isOwnLoan = currentMember && currentMember.accountId === loan.memberId;
 
                                 if (isOwnLoan) {
                                   return <span className="text-xs text-gray-400 italic">Vous ne pouvez pas voter sur votre propre demande</span>;

@@ -1,4 +1,7 @@
 const Member = require('../models/Member');
+const Contribution = require('../models/Contribution');
+const Loan = require('../models/Loan');
+const Aid = require('../models/Aid');
 const generateTempPassword = require('../utils/generatePassword');
 const sendEmail = require('../utils/sendEmail');
 const { invitationEmail } = require('../utils/emailTemplates');
@@ -165,6 +168,12 @@ const deleteMember = async (req, res) => {
     resourceLabel: `${member.name} (${member.email})`,
     actor: req.user,
   });
+
+  await Promise.all([
+    Contribution.deleteMany({ memberId: member._id }),
+    Loan.deleteMany({ memberId: member._id }),
+    Aid.deleteMany({ memberId: member._id }),
+  ]);
 
   await member.deleteOne();
   res.json({ message: 'Membre supprimé' });

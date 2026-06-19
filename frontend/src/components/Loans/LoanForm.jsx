@@ -12,39 +12,46 @@ const LoanForm = ({ onClose, onSubmit, members, initialData = null }) => {
     requestDate: initialData?.requestDate || new Date().toISOString().split('T')[0],
     id: initialData?.id || undefined,
   }));
+  const [ceiling, setCeiling] = useState(0);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    // initial state already derived from initialData in useState; no synchronous setState here
-  }, [initialData]);
+    if (!formData.memberId) {
+      setCeiling(0);
+      return;
+    }
+    ContributionController.computeLoanCeiling(formData.memberId).then(setCeiling);
+  }, [formData.memberId]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     let val = value;
-    if (name === 'memberId') val = parseInt(value || '');
-    else if (name === 'amount' || name === 'duration') val = value === '' ? '' : Number(value);
+    if (name === 'amount' || name === 'duration') val = value === '' ? '' : Number(value);
     setFormData(prev => ({ ...prev, [name]: val }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.memberId) {
       alert('Veuillez sélectionner un membre');
       return;
     }
-    // validate against loan ceiling
-    const ceiling = ContributionController.computeLoanCeiling(formData.memberId);
     if (formData.amount > ceiling) {
       if (!window.confirm(`Le montant demandé (${formData.amount.toLocaleString('fr-FR')} FCFA) dépasse le plafond autorisé (${ceiling.toLocaleString('fr-FR')} FCFA). Continuer ?`)) {
         return;
       }
     }
-    // ensure numeric types
     const payload = { ...formData, amount: Number(formData.amount), duration: parseInt(formData.duration) };
-    onSubmit(payload);
+    setSubmitting(true);
+    try {
+      await onSubmit(payload);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <Modal onClose={onClose} title="Nouvelle demande de prêt">
+    <Modal onClose={onClose} title={initialData ? 'Modifier la demande de prêt' : 'Nouvelle demande de prêt'}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Membre *</label>
@@ -57,7 +64,7 @@ const LoanForm = ({ onClose, onSubmit, members, initialData = null }) => {
           >
             <option value="">Sélectionner un membre</option>
             {members.map(member => (
-              <option key={member.id} value={member.id}>{member.name}</option>
+              <option key={member.accountId} value={member.accountId}>{member.name}</option>
             ))}
           </select>
         </div>
@@ -75,7 +82,7 @@ const LoanForm = ({ onClose, onSubmit, members, initialData = null }) => {
               step="1"
             />
             {formData.memberId && (
-              <p className="text-xs text-gray-500 mt-1">Plafond prêt: <strong className="text-green-600">{ContributionController.computeLoanCeiling(formData.memberId).toLocaleString('fr-FR')} FCFA</strong></p>
+              <p className="text-xs text-gray-500 mt-1">Plafond prêt: <strong className="text-green-600">{ceiling.toLocaleString('fr-FR')} FCFA</strong></p>
             )}
           </div>
 
@@ -131,11 +138,11 @@ const LoanForm = ({ onClose, onSubmit, members, initialData = null }) => {
         </div>
 
         <div className="flex justify-end gap-3 pt-4">
-          <button type="button" onClick={onClose} className="btn-outline">
+          <button type="button" onClick={onClose} className="btn-outline" disabled={submitting}>
             Annuler
           </button>
-          <button type="submit" className="btn-primary">
-            Enregistrer la demande
+          <button type="submit" className="btn-primary disabled:opacity-60" disabled={submitting}>
+            {submitting ? 'Enregistrement...' : 'Enregistrer la demande'}
           </button>
         </div>
       </form>

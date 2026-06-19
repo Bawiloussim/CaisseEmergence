@@ -1,4 +1,4 @@
-// No React hooks needed here
+import { useState, useEffect } from 'react';
 import KPICards from './KPICards';
 import DashboardTable from './DashboardTable';
 import SolidarityCard from './SolidarityCard';
@@ -8,32 +8,40 @@ import SolidarityController from '../../controllers/SolidarityController';
 import { Calendar } from 'lucide-react';
 
 const Dashboard = () => {
-  const stats = (() => {
-    const members = MemberController.getAllMembers();
-    const contributions = ContributionController.getAllContributions();
-    const paidContributions = contributions.filter(c => c.status === 'paid');
-    const solidarity = SolidarityController.getSolidarityFund();
+  const [stats, setStats] = useState(null);
+  const [recentContributions, setRecentContributions] = useState([]);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-    const totalCaisse = paidContributions.reduce((sum, c) => sum + c.amount, 0);
-    const pendingCount = contributions.filter(c => c.status === 'pending' || c.status === 'late').length;
+  useEffect(() => {
+    (async () => {
+      const memberList = MemberController.getAllMembers();
+      const contributions = await ContributionController.getAllContributions();
+      const solidarity = await SolidarityController.getSolidarityFund();
 
-    return {
-      totalCaisse,
-      solidarityFund: solidarity.total,
-      memberCount: members.length,
-      pendingPayments: pendingCount,
-    };
-  })();
+      const paidContributions = contributions.filter((c) => c.status === 'paid');
+      const totalCaisse = paidContributions.reduce((sum, c) => sum + c.amount, 0);
+      const pendingCount = contributions.filter((c) => c.status === 'pending' || c.status === 'late').length;
 
-  const recentContributions = (() => {
-    const contributions = ContributionController.getAllContributions();
-    return [...contributions].sort((a, b) => b.id - a.id).slice(0, 5);
-  })();
-
-  // loadDashboardData removed: stats are derived on initialization and can be
-  // refreshed by other controllers if needed.
+      setMembers(memberList);
+      setStats({
+        totalCaisse,
+        solidarityFund: solidarity.total,
+        memberCount: memberList.length,
+        pendingPayments: pendingCount,
+      });
+      setRecentContributions(
+        [...contributions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5)
+      );
+      setLoading(false);
+    })();
+  }, []);
 
   const MONTH_LABELS = ['Juin','Juil','Août','Sept','Oct','Nov','Déc','Jan','Fév','Mar','Avr','Mai'];
+
+  if (loading) {
+    return <div className="text-center py-12 text-gray-400">Chargement du tableau de bord…</div>;
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -48,7 +56,7 @@ const Dashboard = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
-          <DashboardTable contributions={recentContributions} />
+          <DashboardTable contributions={recentContributions} members={members} />
         </div>
         <div>
           <SolidarityCard solidarityFund={stats.solidarityFund} />

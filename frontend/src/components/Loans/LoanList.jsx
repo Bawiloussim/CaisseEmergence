@@ -56,6 +56,23 @@ const LoanList = ({ isSecretary }) => {
     }
   };
 
+  const handleDeleteLoan = (loan) => {
+    const member = members.find((m) => m.id === loan.memberId);
+    if (!window.confirm(`Supprimer la demande de prêt de ${member?.name || 'ce membre'} (${loan.amount.toLocaleString('fr-FR')} FCFA) ?`)) {
+      return;
+    }
+    const res = LoanController.deleteLoan(loan.id);
+    if (res.success) {
+      ActivityLogService.log({
+        action: 'delete',
+        resource: 'loan',
+        label: `Prêt de ${member?.name || 'Inconnu'} — ${loan.amount} FCFA supprimé`,
+        actorName: user?.name,
+      });
+      setRefresh(prev => prev + 1);
+    }
+  };
+
   const handleAddLoan = (loanData) => {
     // If editing existing loan
     if (loanData.id) {
@@ -242,7 +259,10 @@ const LoanList = ({ isSecretary }) => {
                               pour corriger une erreur de saisie même après approbation/refus du prêt. */}
                           <button onClick={() => PDFService.generateLoanContract(loan, member, StorageService.getSettings())} className="px-3 py-1 bg-blue-100 text-blue-700 rounded">Générer contrat</button>
                           {isSecretary && (
-                            <button onClick={() => { setEditLoan(loan); setShowForm(true); }} className="px-3 py-1 bg-gray-100 text-gray-700 rounded">Modifier</button>
+                            <>
+                              <button onClick={() => { setEditLoan(loan); setShowForm(true); }} className="px-3 py-1 bg-gray-100 text-gray-700 rounded">Modifier</button>
+                              <button onClick={() => handleDeleteLoan(loan)} className="px-3 py-1 bg-red-100 text-red-700 rounded">Supprimer</button>
+                            </>
                           )}
                         </div>
                       </td>

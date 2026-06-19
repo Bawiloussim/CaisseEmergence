@@ -82,6 +82,13 @@ class LoanController {
     }
   }
 
+  deleteLoan(id) {
+    const loans = this.getAllLoans();
+    const filtered = loans.filter(l => l.id !== parseInt(id));
+    StorageService.saveLoans(filtered);
+    return { success: true };
+  }
+
   // Add or update a vote for a loan by a member
   addVote(loanId, memberId, vote) {
     const loans = this.getAllLoans();

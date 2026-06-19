@@ -45,6 +45,13 @@ class SolidarityController {
     return { success: true, aid: updated };
   }
 
+  deleteAid(id) {
+    const aids = this.getAllAids();
+    const filtered = aids.filter(a => a.id !== parseInt(id));
+    StorageService.saveAids(filtered);
+    return { success: true };
+  }
+
   getSolidarityFund() {
     const contributions = ContributionController.getAllContributions();
     const feesTotal = contributions

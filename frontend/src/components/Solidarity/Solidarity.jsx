@@ -64,6 +64,23 @@ const Solidarity = ({ isSecretary }) => {
     return result;
   };
 
+  const handleDeleteAid = (aid) => {
+    const member = members.find((m) => m.id === aid.memberId);
+    if (!window.confirm(`Supprimer l'aide de ${aid.amount.toLocaleString('fr-FR')} FCFA pour ${member?.name || 'ce membre'} ?`)) {
+      return;
+    }
+    const result = SolidarityController.deleteAid(aid.id);
+    if (result.success) {
+      ActivityLogService.log({
+        action: 'delete',
+        resource: 'aid',
+        label: `Aide à ${member?.name || 'Inconnu'} — ${aid.amount} FCFA supprimée`,
+        actorName: user?.name,
+      });
+      setRefresh(prev => prev + 1);
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -86,6 +103,7 @@ const Solidarity = ({ isSecretary }) => {
             members={members}
             isSecretary={isSecretary}
             onEditAid={(aid) => { setEditData(aid); setShowForm(true); }}
+            onDeleteAid={handleDeleteAid}
           />
         </div>
       </div>

@@ -1,7 +1,7 @@
 // React import removed (not needed with new JSX transform)
 import { Heart } from 'lucide-react';
 
-const AidHistory = ({ aids, members, isSecretary = false, onEditAid }) => {
+const AidHistory = ({ aids, members, isSecretary = false, onEditAid, onDeleteAid }) => {
   const getMemberName = (memberId) => {
     const member = members.find(m => m.id === memberId);
     return member?.name || 'Inconnu';
@@ -30,12 +30,20 @@ const AidHistory = ({ aids, members, isSecretary = false, onEditAid }) => {
               <td className="px-3 py-3 text-gray-500">{aid.date}</td>
               {isSecretary && (
                 <td className="px-3 py-3 text-center">
-                  <button
-                    onClick={() => onEditAid && onEditAid(aid)}
-                    className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200"
-                  >
-                    Modifier
-                  </button>
+                  <div className="flex items-center gap-1 justify-center">
+                    <button
+                      onClick={() => onEditAid && onEditAid(aid)}
+                      className="px-3 py-1 bg-gray-100 text-gray-700 rounded text-xs hover:bg-gray-200"
+                    >
+                      Modifier
+                    </button>
+                    <button
+                      onClick={() => onDeleteAid && onDeleteAid(aid)}
+                      className="px-3 py-1 bg-red-100 text-red-700 rounded text-xs hover:bg-red-200"
+                    >
+                      Supprimer
+                    </button>
+                  </div>
                 </td>
               )}
             </tr>

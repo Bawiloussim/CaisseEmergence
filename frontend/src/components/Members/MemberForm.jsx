@@ -20,6 +20,7 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
   
   const [errors, setErrors] = useState({});
   const [photoPreview, setPhotoPreview] = useState(formData.photo);
+  const [submitting, setSubmitting] = useState(false);
   const photoInputRef = useRef(null);
 
   const roles = ['Membre actif', 'Président', 'Trésorier', 'Secrétaire'];
@@ -59,10 +60,14 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      onSubmit(formData);
+    if (!validate()) return;
+    setSubmitting(true);
+    try {
+      await onSubmit(formData);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -245,12 +250,18 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
           </div>
         </div>
 
+        {submitting && (
+          <p className="text-xs text-gray-400 text-right">
+            Enregistrement en cours… le serveur peut prendre jusqu'à une minute à se réveiller s'il était inactif.
+          </p>
+        )}
+
         <div className="flex justify-end gap-3 pt-4">
-          <button type="button" onClick={onClose} className="btn-outline">
+          <button type="button" onClick={onClose} className="btn-outline" disabled={submitting}>
             Annuler
           </button>
-          <button type="submit" className="btn-primary">
-            {editingMember ? 'Mettre à jour' : 'Enregistrer'}
+          <button type="submit" className="btn-primary disabled:opacity-60" disabled={submitting}>
+            {submitting ? 'Enregistrement...' : (editingMember ? 'Mettre à jour' : 'Enregistrer')}
           </button>
         </div>
       </form>

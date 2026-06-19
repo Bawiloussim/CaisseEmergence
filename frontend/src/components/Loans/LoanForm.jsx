@@ -72,7 +72,7 @@ const LoanForm = ({ onClose, onSubmit, members, initialData = null }) => {
               onChange={handleChange}
               className="input"
               min="5000"
-              step="5000"
+              step="1"
             />
             {formData.memberId && (
               <p className="text-xs text-gray-500 mt-1">Plafond prêt: <strong className="text-green-600">{ContributionController.computeLoanCeiling(formData.memberId).toLocaleString('fr-FR')} FCFA</strong></p>

@@ -232,7 +232,7 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
               onChange={handleChange}
               className={`input ${errors.monthlyContribution ? 'border-red-500' : ''}`}
               min="5000"
-              step="1000"
+              step="1"
             />
             {errors.monthlyContribution && <p className="text-xs text-red-500 mt-1">{errors.monthlyContribution}</p>}
           </div>

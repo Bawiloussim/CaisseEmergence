@@ -71,7 +71,7 @@ const AidForm = ({ onClose, onSubmit, members, currentFund }) => {
               onChange={handleChange}
               className="input"
               min="1000"
-              step="1000"
+              step="1"
               required
             />
           </div>

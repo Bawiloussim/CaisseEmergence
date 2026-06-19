@@ -1,7 +1,7 @@
 // React import removed (not needed with new JSX transform)
 import { CheckCircle, Clock, XCircle } from 'lucide-react';
 
-const ContributionTable = ({ contributions, members, isSecretary = false, onEditContribution }) => {
+const ContributionTable = ({ contributions, members, isSecretary = false, onEditContribution, onDeleteContribution }) => {
   const MONTHS = ['JUIN', 'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE'];
   const MONTH_LABELS = ['Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov'];
 
@@ -73,10 +73,16 @@ const ContributionTable = ({ contributions, members, isSecretary = false, onEdit
                           {contrib ? getStatusDisplay(contrib.status) : '—'}
                         </div>
                         {isSecretary && contrib && (
-                          <button
-                            onClick={() => onEditContribution && onEditContribution(contrib)}
-                            className="text-xs text-navy/80 hover:underline mt-1"
-                          >Modifier</button>
+                          <div className="flex items-center gap-2 mt-1">
+                            <button
+                              onClick={() => onEditContribution && onEditContribution(contrib)}
+                              className="text-xs text-navy/80 hover:underline"
+                            >Modifier</button>
+                            <button
+                              onClick={() => onDeleteContribution && onDeleteContribution(contrib)}
+                              className="text-xs text-red-600 hover:underline"
+                            >Supprimer</button>
+                          </div>
                         )}
                       </div>
                     </td>

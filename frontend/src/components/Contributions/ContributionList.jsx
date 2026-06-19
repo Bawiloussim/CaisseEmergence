@@ -82,6 +82,23 @@ const ContributionList = ({ isSecretary }) => {
     return result;
   };
 
+  const handleDeleteContribution = (contribution) => {
+    const member = members.find((m) => m.id === parseInt(contribution.memberId));
+    if (!window.confirm(`Supprimer la cotisation de ${member?.name || 'ce membre'} pour ${MONTHS_FULL[contribution.month] || contribution.month} (${contribution.amount.toLocaleString('fr-FR')} FCFA) ?`)) {
+      return;
+    }
+    const result = ContributionController.deleteContribution(contribution.id);
+    if (result.success) {
+      ActivityLogService.log({
+        action: 'delete',
+        resource: 'contribution',
+        label: `Cotisation de ${member?.name || 'Inconnu'} — ${MONTHS_FULL[contribution.month] || contribution.month} (${contribution.amount} FCFA) supprimée`,
+        actorName: user?.name,
+      });
+      setRefresh(prev => prev + 1);
+    }
+  };
+
   // editing is handled by opening the form and passing `initialData` prop when needed
 
   return (
@@ -103,6 +120,7 @@ const ContributionList = ({ isSecretary }) => {
         members={members}
         isSecretary={isSecretary}
         onEditContribution={(c) => { setEditData(c); setShowForm(true); }}
+        onDeleteContribution={handleDeleteContribution}
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

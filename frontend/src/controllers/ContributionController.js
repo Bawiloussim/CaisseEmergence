@@ -130,6 +130,13 @@ class ContributionController {
     return { success: true, contribution: contributions[index] };
   }
 
+  deleteContribution(id) {
+    const contributions = this.getAllContributions();
+    const filtered = contributions.filter(c => c.id !== parseInt(id));
+    StorageService.saveContributions(filtered);
+    return { success: true };
+  }
+
   // Summary for a specific member
   getMemberContributionSummary(memberId) {
     memberId = parseInt(memberId);

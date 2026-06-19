@@ -193,64 +193,58 @@ const LoanList = ({ isSecretary }) => {
                     <td className="px-4 py-3 text-center">{getStatusBadge(loan.status)}</td>
                     <td className="px-4 py-3 text-center">{loan.requestDate}</td>
                       <td className="px-4 py-3">
-                        {loan.status === 'pending' && (
-                          <div className="flex items-center gap-2 flex-wrap">
-                            {(() => {
-                              const yesCount = loan.votes?.filter((v) => v.vote === 'yes').length || 0;
-                              const noCount = loan.votes?.filter((v) => v.vote === 'no').length || 0;
-                              return (
-                                <span className="text-xs text-gray-500 mr-1">
-                                  {yesCount} oui · {noCount} non
-                                </span>
-                              );
-                            })()}
-                            {(() => {
-                              const existingVote = currentMember
-                                ? loan.votes?.find((v) => parseInt(v.memberId) === currentMember.id)
-                                : null;
-                              const isOwnLoan = currentMember && currentMember.id === loan.memberId;
+                        <div className="flex items-center gap-2 flex-wrap">
+                          {loan.status === 'pending' && (
+                            <>
+                              {(() => {
+                                const yesCount = loan.votes?.filter((v) => v.vote === 'yes').length || 0;
+                                const noCount = loan.votes?.filter((v) => v.vote === 'no').length || 0;
+                                return (
+                                  <span className="text-xs text-gray-500 mr-1">
+                                    {yesCount} oui · {noCount} non
+                                  </span>
+                                );
+                              })()}
+                              {(() => {
+                                const existingVote = currentMember
+                                  ? loan.votes?.find((v) => parseInt(v.memberId) === currentMember.id)
+                                  : null;
+                                const isOwnLoan = currentMember && currentMember.id === loan.memberId;
 
-                              if (isOwnLoan) {
-                                return <span className="text-xs text-gray-400 italic">Vous ne pouvez pas voter sur votre propre demande</span>;
-                              }
-                              if (!currentMember) {
-                                return <span className="text-xs text-gray-400 italic">Connectez-vous avec un compte membre pour voter</span>;
-                              }
-                              return (
-                                <>
-                                  <button
-                                    onClick={() => handleCastVote(loan.id, 'yes')}
-                                    className={`px-3 py-1 rounded ${existingVote?.vote === 'yes' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700'}`}
-                                  >
-                                    Oui
-                                  </button>
-                                  <button
-                                    onClick={() => handleCastVote(loan.id, 'no')}
-                                    className={`px-3 py-1 rounded ${existingVote?.vote === 'no' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'}`}
-                                  >
-                                    Non
-                                  </button>
-                                </>
-                              );
-                            })()}
+                                if (isOwnLoan) {
+                                  return <span className="text-xs text-gray-400 italic">Vous ne pouvez pas voter sur votre propre demande</span>;
+                                }
+                                if (!currentMember) {
+                                  return <span className="text-xs text-gray-400 italic">Connectez-vous avec un compte membre pour voter</span>;
+                                }
+                                return (
+                                  <>
+                                    <button
+                                      onClick={() => handleCastVote(loan.id, 'yes')}
+                                      className={`px-3 py-1 rounded ${existingVote?.vote === 'yes' ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700'}`}
+                                    >
+                                      Oui
+                                    </button>
+                                    <button
+                                      onClick={() => handleCastVote(loan.id, 'no')}
+                                      className={`px-3 py-1 rounded ${existingVote?.vote === 'no' ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'}`}
+                                    >
+                                      Non
+                                    </button>
+                                  </>
+                                );
+                              })()}
+                              <button onClick={() => PDFService.generateLoanForm(member, StorageService.getSettings(), loan)} className="px-3 py-1 bg-white text-navy border rounded">Générer formulaire</button>
+                            </>
+                          )}
 
-                            {isSecretary && (
-                              <button onClick={() => { setEditLoan(loan); setShowForm(true); }} className="px-3 py-1 bg-gray-100 text-gray-700 rounded">Modifier</button>
-                            )}
-                            <button onClick={() => PDFService.generateLoanContract(loan, member, StorageService.getSettings())} className="px-3 py-1 bg-blue-100 text-blue-700 rounded">Générer contrat</button>
-                            <button onClick={() => PDFService.generateLoanForm(member, StorageService.getSettings(), loan)} className="px-3 py-1 bg-white text-navy border rounded">Générer formulaire</button>
-                          </div>
-                        )}
-                        {loan.status === 'approved' && (
-                          <div className="flex items-center gap-2 justify-center">
-                            <button
-                              onClick={() => PDFService.generateLoanContract(loan, member, StorageService.getSettings())}
-                              className="px-3 py-1 bg-navy text-white rounded"
-                            >
-                              Contrat PDF
-                            </button>
-                          </div>
-                        )}
+                          {/* Le contrat et la modification restent disponibles quel que soit le statut,
+                              pour corriger une erreur de saisie même après approbation/refus du prêt. */}
+                          <button onClick={() => PDFService.generateLoanContract(loan, member, StorageService.getSettings())} className="px-3 py-1 bg-blue-100 text-blue-700 rounded">Générer contrat</button>
+                          {isSecretary && (
+                            <button onClick={() => { setEditLoan(loan); setShowForm(true); }} className="px-3 py-1 bg-gray-100 text-gray-700 rounded">Modifier</button>
+                          )}
+                        </div>
                       </td>
                   </tr>
                 );

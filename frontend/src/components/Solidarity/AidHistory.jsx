@@ -12,21 +12,21 @@ const AidHistory = ({ aids, members }) => {
       <table className="w-full text-sm table-header-rounded">
         <thead>
           <tr className="border-b border-gray-200">
-            <th className="py-3 text-left">Membre</th>
-            <th className="py-3 text-right">Montant</th>
-            <th className="py-3 text-left">Motif</th>
-            <th className="py-3 text-left">Date</th>
+            <th className="px-3 py-3 text-left">Membre</th>
+            <th className="px-3 py-3 text-right">Montant</th>
+            <th className="px-3 py-3 text-left">Motif</th>
+            <th className="px-3 py-3 text-left">Date</th>
           </tr>
         </thead>
         <tbody>
           {aids.map(aid => (
             <tr key={aid.id} className="border-b border-gray-100 hover:bg-gray-50">
-              <td className="py-3 font-medium">{getMemberName(aid.memberId)}</td>
-              <td className="py-3 text-right text-red-600 font-semibold">
+              <td className="px-3 py-3 font-medium">{getMemberName(aid.memberId)}</td>
+              <td className="px-3 py-3 text-right text-red-600 font-semibold whitespace-nowrap">
                 {aid.amount.toLocaleString('fr-FR')} FCFA
               </td>
-              <td className="py-3">{aid.motif}</td>
-              <td className="py-3 text-gray-500">{aid.date}</td>
+              <td className="px-3 py-3">{aid.motif}</td>
+              <td className="px-3 py-3 text-gray-500">{aid.date}</td>
             </tr>
           ))}
           {aids.length === 0 && (

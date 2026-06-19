@@ -10,7 +10,7 @@ class SolidarityController {
     const aids = this.getAllAids();
     const aid = {
       id: aidData.id || Date.now(),
-      memberId: aidData.memberId,
+      memberId: parseInt(aidData.memberId),
       amount: Number(aidData.amount) || 0,
       motif: aidData.motif || '',
       date: aidData.date || new Date().toISOString().split('T')[0],

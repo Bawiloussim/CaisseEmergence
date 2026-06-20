@@ -15,7 +15,7 @@ const Dashboard = ({ onNavigateToProgram }) => {
   const [stats, setStats] = useState(null);
   const [recentContributions, setRecentContributions] = useState([]);
   const [members, setMembers] = useState([]);
-  const [needsMeetingSignature, setNeedsMeetingSignature] = useState(false);
+  const [needsMeetingOpinion, setNeedsMeetingOpinion] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const currentMonth = getCurrentCycleMonth();
@@ -43,9 +43,9 @@ const Dashboard = ({ onNavigateToProgram }) => {
       setRecentContributions(
         [...contributions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5)
       );
-      setNeedsMeetingSignature(
+      setNeedsMeetingOpinion(
         !!currentMonth &&
-          !meetingFeedback.some((f) => f.memberId === user?.id && f.month === currentMonth)
+          !meetingFeedback.some((f) => f.memberId === user?.id && f.month === currentMonth && f.satisfaction != null)
       );
       setLoading(false);
     })();
@@ -66,20 +66,20 @@ const Dashboard = ({ onNavigateToProgram }) => {
         </div>
       </div>
 
-      {needsMeetingSignature && (
+      {needsMeetingOpinion && (
         <div className="p-4 rounded-xl shadow-main bg-gold/10 border border-gold/30 flex items-center gap-4 flex-wrap">
           <div className="w-10 h-10 rounded-lg bg-gold text-navy flex items-center justify-center shrink-0">
             <Video size={18} />
           </div>
           <div className="flex-1 min-w-0">
             <p className="text-sm text-navy">
-              <strong>Réunion de {CYCLE_MONTHS_FULL[currentMonth]} :</strong> vous n'avez pas encore signé votre
-              présence ni donné votre avis.
+              <strong>Réunion de {CYCLE_MONTHS_FULL[currentMonth]} :</strong> vous n'avez pas encore donné votre
+              avis.
             </p>
           </div>
           {onNavigateToProgram && (
             <button onClick={onNavigateToProgram} className="btn-gold text-sm shrink-0">
-              Signer maintenant
+              Donner mon avis
             </button>
           )}
         </div>

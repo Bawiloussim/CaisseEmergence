@@ -12,11 +12,11 @@ const MeetingRollCall = ({ isSecretary }) => {
   const [members, setMembers] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [present, setPresent] = useState(true);
   const [satisfaction, setSatisfaction] = useState('satisfait');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [sendingReminders, setSendingReminders] = useState(false);
+  const [presenceUpdating, setPresenceUpdating] = useState(null);
 
   const currentMonth = getCurrentCycleMonth();
 
@@ -34,10 +34,10 @@ const MeetingRollCall = ({ isSecretary }) => {
     () => feedback.find((f) => f.memberId === user?.id && f.month === currentMonth),
     [feedback, user, currentMonth]
   );
+  const hasGivenMyOpinion = myEntry?.satisfaction != null;
 
   useEffect(() => {
     if (myEntry) {
-      setPresent(myEntry.present);
       setSatisfaction(myEntry.satisfaction || 'satisfait');
       setComment(myEntry.comment || '');
     }
@@ -56,12 +56,23 @@ const MeetingRollCall = ({ isSecretary }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
-    const result = await MeetingFeedbackController.submitMine({ present, satisfaction, comment });
+    const result = await MeetingFeedbackController.submitMine({ satisfaction, comment });
     setSubmitting(false);
     if (result.success) {
       await loadData();
     } else {
       alert(result.error || "Erreur lors de l'enregistrement");
+    }
+  };
+
+  const handleSetPresence = async (memberId, present) => {
+    setPresenceUpdating(memberId);
+    const result = await MeetingFeedbackController.setPresence(memberId, present);
+    setPresenceUpdating(null);
+    if (result.success) {
+      await loadData();
+    } else {
+      alert(result.error || "Erreur lors de l'enregistrement de la présence");
     }
   };
 
@@ -71,7 +82,7 @@ const MeetingRollCall = ({ isSecretary }) => {
     setSendingReminders(false);
     if (result.success) {
       if (result.pendingCount === 0) {
-        showToast('Tous les membres ont déjà signé ce mois-ci.', 'info');
+        showToast('Tous les membres ont déjà donné leur avis ce mois-ci.', 'info');
       } else if (result.failed?.length) {
         showToast(
           `${result.sent}/${result.pendingCount} rappel(s) envoyé(s) — ${result.failed.length} échec(s) (configuration email).`,
@@ -86,7 +97,7 @@ const MeetingRollCall = ({ isSecretary }) => {
     }
   };
 
-  const renderTable = (entries) => (
+  const renderTable = (entries, { editablePresence = false } = {}) => (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead>
@@ -104,12 +115,33 @@ const MeetingRollCall = ({ isSecretary }) => {
               <tr key={m.id} className="border-b border-gray-100">
                 <td className="px-4 py-3 font-medium">{m.name}</td>
                 <td className="px-4 py-3 text-center">
-                  {entry ? (
-                    entry.present ? (
-                      <span className="inline-flex items-center gap-1 text-green-600"><Check size={14} /> Présent</span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1 text-red-500"><X size={14} /> Absent</span>
-                    )
+                  {editablePresence ? (
+                    <div className="inline-flex items-center gap-1">
+                      <button
+                        type="button"
+                        disabled={presenceUpdating === m.accountId}
+                        onClick={() => handleSetPresence(m.accountId, true)}
+                        className={`px-2 py-1 rounded text-xs flex items-center gap-1 disabled:opacity-60 ${
+                          entry?.present === true ? 'bg-green-600 text-white' : 'bg-green-100 text-green-700'
+                        }`}
+                      >
+                        <Check size={12} /> Présent
+                      </button>
+                      <button
+                        type="button"
+                        disabled={presenceUpdating === m.accountId}
+                        onClick={() => handleSetPresence(m.accountId, false)}
+                        className={`px-2 py-1 rounded text-xs flex items-center gap-1 disabled:opacity-60 ${
+                          entry?.present === false ? 'bg-red-600 text-white' : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        <X size={12} /> Absent
+                      </button>
+                    </div>
+                  ) : entry?.present === true ? (
+                    <span className="inline-flex items-center gap-1 text-green-600"><Check size={14} /> Présent</span>
+                  ) : entry?.present === false ? (
+                    <span className="inline-flex items-center gap-1 text-red-500"><X size={14} /> Absent</span>
                   ) : (
                     <span className="text-gray-400">En attente</span>
                   )}
@@ -153,40 +185,35 @@ const MeetingRollCall = ({ isSecretary }) => {
       {currentMonth ? (
         <>
           <p className="text-sm text-gray-500 mb-4">
-            Réunion de {CYCLE_MONTHS_FULL[currentMonth]} — chaque membre signe sa présence et donne son avis ci-dessous.
+            Réunion de {CYCLE_MONTHS_FULL[currentMonth]} — chaque membre donne son avis ci-dessous ; la présence
+            est constatée par le secrétaire, qui anime l'appel.
           </p>
-          {renderTable(currentEntries)}
+          {renderTable(currentEntries, { editablePresence: isSecretary })}
 
           <form onSubmit={handleSubmit} className="mt-6 pt-6 border-t space-y-4">
-            <h4 className="font-semibold text-navy">Votre présence & avis — {CYCLE_MONTHS_FULL[currentMonth]}</h4>
-            <div className="flex items-center gap-6 flex-wrap">
-              <label className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={present} onChange={(e) => setPresent(e.target.checked)} />
-                J'étais présent(e) à la réunion en visioconférence
+            <h4 className="font-semibold text-navy">Votre avis — {CYCLE_MONTHS_FULL[currentMonth]}</h4>
+            <div className="flex items-center gap-3 text-sm">
+              <span>Satisfaction :</span>
+              <label className="flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="satisfaction"
+                  value="satisfait"
+                  checked={satisfaction === 'satisfait'}
+                  onChange={() => setSatisfaction('satisfait')}
+                />
+                <Smile size={16} className="text-green-600" /> Satisfait(e)
               </label>
-              <div className="flex items-center gap-3 text-sm">
-                <span>Satisfaction :</span>
-                <label className="flex items-center gap-1">
-                  <input
-                    type="radio"
-                    name="satisfaction"
-                    value="satisfait"
-                    checked={satisfaction === 'satisfait'}
-                    onChange={() => setSatisfaction('satisfait')}
-                  />
-                  <Smile size={16} className="text-green-600" /> Satisfait(e)
-                </label>
-                <label className="flex items-center gap-1">
-                  <input
-                    type="radio"
-                    name="satisfaction"
-                    value="insatisfait"
-                    checked={satisfaction === 'insatisfait'}
-                    onChange={() => setSatisfaction('insatisfait')}
-                  />
-                  <Frown size={16} className="text-red-500" /> Insatisfait(e)
-                </label>
-              </div>
+              <label className="flex items-center gap-1">
+                <input
+                  type="radio"
+                  name="satisfaction"
+                  value="insatisfait"
+                  checked={satisfaction === 'insatisfait'}
+                  onChange={() => setSatisfaction('insatisfait')}
+                />
+                <Frown size={16} className="text-red-500" /> Insatisfait(e)
+              </label>
             </div>
             <div>
               <label className="text-sm font-medium block mb-1">Votre avis sur la réunion (optionnel)</label>
@@ -199,7 +226,7 @@ const MeetingRollCall = ({ isSecretary }) => {
               />
             </div>
             <button type="submit" disabled={submitting} className="btn-gold disabled:opacity-60">
-              {submitting ? 'Enregistrement…' : myEntry ? 'Mettre à jour ma réponse' : 'Signer ma présence'}
+              {submitting ? 'Enregistrement…' : hasGivenMyOpinion ? 'Mettre à jour mon avis' : 'Donner mon avis'}
             </button>
           </form>
         </>

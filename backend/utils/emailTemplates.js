@@ -50,8 +50,10 @@ function invitationEmail({ name, email, tempPassword, associationName, loginUrl 
 }
 
 /**
- * Rappel envoyé à un membre qui n'a pas encore signé sa présence ni donné
- * son avis pour la réunion mensuelle en visioconférence du mois en cours.
+ * Rappel envoyé à un membre qui n'a pas encore donné son avis pour la
+ * réunion mensuelle en visioconférence du mois en cours. La présence,
+ * elle, est constatée par le secrétaire et ne fait pas l'objet de ce
+ * rappel.
  */
 function meetingReminderEmail({ name, month, associationName, loginUrl }) {
   return `
@@ -63,15 +65,15 @@ function meetingReminderEmail({ name, month, associationName, loginUrl }) {
 
     <p>Bonjour ${name},</p>
     <p>
-      Vous n'avez pas encore signé votre présence ni donné votre avis pour la
-      réunion mensuelle de <strong>${month}</strong>, en appel
-      visioconférence. Cette réunion est obligatoire pour tous les membres.
+      Vous n'avez pas encore donné votre avis sur la réunion mensuelle de
+      <strong>${month}</strong>, en appel visioconférence. Cette réunion est
+      obligatoire pour tous les membres.
     </p>
 
     <p style="margin: 24px 0;">
       <a href="${loginUrl}"
          style="background:#c48a21; color:#072434; padding:12px 24px; border-radius:9999px; text-decoration:none; font-weight:bold; display:inline-block;">
-        Signer ma présence
+        Donner mon avis
       </a>
     </p>
 

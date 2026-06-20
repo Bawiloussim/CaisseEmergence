@@ -113,7 +113,8 @@ const Statistics = () => {
       const entries = meetingFeedback.filter((f) => f.month === month);
       return {
         month: MONTHS_FULL[month],
-        Présents: entries.filter((f) => f.present).length,
+        Présents: entries.filter((f) => f.present === true).length,
+        Absents: entries.filter((f) => f.present === false).length,
         Satisfaits: entries.filter((f) => f.satisfaction === 'satisfait').length,
         Insatisfaits: entries.filter((f) => f.satisfaction === 'insatisfait').length,
       };
@@ -222,6 +223,7 @@ const Statistics = () => {
               <Tooltip />
               <Legend />
               <Bar dataKey="Présents" fill="#0f3751" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Absents" fill="#fb923c" radius={[4, 4, 0, 0]} />
               <Bar dataKey="Satisfaits" fill="#4ade80" radius={[4, 4, 0, 0]} />
               <Bar dataKey="Insatisfaits" fill="#f87171" radius={[4, 4, 0, 0]} />
             </BarChart>

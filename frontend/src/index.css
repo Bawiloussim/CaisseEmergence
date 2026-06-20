@@ -51,7 +51,7 @@ h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
 .input { width:100%; padding:10px 12px; border:1px solid rgba(11,58,90,0.06); border-radius:10px; background: #fff; }
 .input:focus { outline: none; box-shadow: 0 6px 18px rgba(11,58,90,0.06); border-color: var(--navy); }
 /* Card base */
-.card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 20px; }
+.card { background: var(--card-bg); border-radius: var(--radius); box-shadow: var(--shadow-lg); padding: 24px; }
 
 /* Report card */
 .report-card { border: 1px solid rgba(11,58,90,0.06); border-radius: var(--radius); padding: 28px; background: #fff; }
@@ -64,7 +64,7 @@ h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
 .month-pill.gold { background: #fff7eb; color: var(--gold); border:1px solid rgba(196,138,33,0.15); border-radius: calc(var(--radius) / 2); }
 
 /* Utility spacing adjustments */
-.container-wide { max-width: 1100px; margin: 0 auto; }
+.container-wide { max-width: 1280px; margin: 0 auto; }
 
 /* Alert like in screenshots */
 .alert-info { background: linear-gradient(90deg, rgba(15,55,81,0.04), rgba(15,55,81,0.02)); padding: 12px 16px; border-radius: 10px; display:flex; gap:12px; align-items:center; }
@@ -73,7 +73,7 @@ h1, h2, h3, h4 { font-family: 'Playfair Display', serif; }
 .shadow-main { box-shadow: 0 12px 30px rgba(38, 115, 166, 0.06); }
 
 /* KPI cards */
-.kpi-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:16px; }
+.kpi-grid { display:grid; grid-template-columns: repeat(4,1fr); gap:20px; }
 @media (max-width: 1024px) { .kpi-grid { grid-template-columns: repeat(2,1fr); } }
 @media (max-width: 560px) { .kpi-grid { grid-template-columns: 1fr; } }
 .kpi-card { background:#fcf9f9; border-radius: var(--radius); padding:18px; box-shadow: 0 8px 24px rgba(15,55,81,0.04); border-left:4px solid transparent; }

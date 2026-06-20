@@ -91,7 +91,7 @@ function AppContent() {
         onUpdateSettings={updateSettings}
       />
       <Navigation activeTab={activeTab} onTabChange={setActiveTab} isSecretary={isSecretary} />
-      <main className="container-wide px-6 py-8 flex-1">
+      <main className="container-wide px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
         {renderContent()}
       </main>
       <Footer settings={settings} />

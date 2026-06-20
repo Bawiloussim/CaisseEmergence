@@ -3,8 +3,10 @@ import ContributionTable from './ContributionTable';
 import ContributionForm from './ContributionForm';
 import ContributionController from '../../controllers/ContributionController';
 import MemberController from '../../controllers/MemberController';
-import { Plus } from 'lucide-react';
+import { Plus, Smartphone } from 'lucide-react';
 import { MONTHS_FULL } from '../../models/ContributionModel';
+
+const FLOOZ_NUMBER = '79854438';
 
 const ContributionList = ({ isSecretary }) => {
   const [contributions, setContributions] = useState([]);
@@ -99,6 +101,17 @@ const ContributionList = ({ isSecretary }) => {
             <Plus size={18} /> Enregistrer paiement
           </button>
         )}
+      </div>
+
+      <div className="alert-info bg-gold/10">
+        <div className="bar" style={{ backgroundColor: '#c48a21' }} />
+        <p className="text-sm text-navy flex items-center gap-2 flex-wrap">
+          <Smartphone size={16} className="text-gold shrink-0" />
+          <span>
+            Dépôt mensuel par Flooz au numéro <strong>{FLOOZ_NUMBER}</strong>. Informez le secrétaire une fois le
+            dépôt effectué pour qu'il enregistre votre paiement.
+          </span>
+        </p>
       </div>
 
       <ContributionTable

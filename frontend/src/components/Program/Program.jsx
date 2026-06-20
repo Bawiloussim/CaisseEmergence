@@ -2,12 +2,13 @@ import { Calendar, Video, Wallet, HandCoins, AlertTriangle, HandHeart, MessageCi
 import MeetingRollCall from './MeetingRollCall';
 
 const WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/DwtJzJBIuq60HJOyZabcae';
+const FLOOZ_NUMBER = '79854438';
 
 const STEPS = [
   {
     icon: Wallet,
     title: 'Du 1er au 5 du mois',
-    text: "Chaque membre verse sa cotisation mensuelle (minimum 5 000 FCFA + 300 FCFA de frais de gestion).",
+    text: `Chaque membre verse sa cotisation mensuelle (minimum 5 000 FCFA + 300 FCFA de frais de gestion) par Flooz au numéro ${FLOOZ_NUMBER}.`,
   },
   {
     icon: Video,
@@ -86,6 +87,7 @@ const Program = ({ isSecretary }) => {
               <li>Frais de gestion 300 FCFA/mois</li>
               <li>Date limite : le 5 du mois</li>
               <li>Janvier à novembre</li>
+              <li>Dépôt par Flooz au <strong>{FLOOZ_NUMBER}</strong></li>
             </ul>
           </div>
           <div className="space-y-3">

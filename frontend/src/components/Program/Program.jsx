@@ -1,4 +1,5 @@
 import { Calendar, Video, Wallet, HandCoins, AlertTriangle, HandHeart } from 'lucide-react';
+import MeetingRollCall from './MeetingRollCall';
 
 const STEPS = [
   {
@@ -60,6 +61,8 @@ const Program = () => {
           transparence et les décisions collectives de la caisse.
         </p>
       </div>
+
+      <MeetingRollCall />
 
       <div className="card">
         <h3 className="font-playfair text-lg font-bold text-navy mb-4">📜 Charte — Règles essentielles</h3>

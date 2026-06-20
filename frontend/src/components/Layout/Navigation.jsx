@@ -1,7 +1,7 @@
 // React import removed (not needed with new JSX transform)
 import { LayoutDashboard, Users, CreditCard, HandCoins, Heart, FileText, BarChart3, ScrollText } from 'lucide-react';
 
-const Navigation = ({ activeTab, onTabChange, isSecretary }) => {
+const Navigation = ({ activeTab, onTabChange }) => {
   const navItems = [
     { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
     { id: 'members', label: 'Membres', icon: Users },
@@ -10,7 +10,7 @@ const Navigation = ({ activeTab, onTabChange, isSecretary }) => {
     { id: 'solidarity', label: 'Solidarité', icon: Heart },
     { id: 'statistics', label: 'Statistiques', icon: BarChart3 },
     { id: 'reports', label: 'Rapports', icon: FileText },
-    ...(isSecretary ? [{ id: 'activity', label: 'Journal', icon: ScrollText }] : []),
+    { id: 'program', label: 'Programme & Charte', icon: ScrollText },
   ];
 
   return (

@@ -100,48 +100,6 @@ const Reports = () => {
           }}
         />
       )}
-
-      <div className="card">
-        <h3 className="font-playfair text-lg font-bold text-navy mb-4">📜 Charte — Règles essentielles</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h4 className="font-bold text-gold">💰 Cotisations</h4>
-            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-              <li>Minimum 5 000 FCFA/mois</li>
-              <li>Frais de gestion 300 FCFA/mois</li>
-              <li>Date limite : le 5 du mois</li>
-              <li>Janvier à novembre</li>
-            </ul>
-          </div>
-          <div className="space-y-3">
-            <h4 className="font-bold text-gold">🏦 Prêts (phase définitive)</h4>
-            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-              <li>Maximum : 150% du solde cotisé</li>
-              <li>Intérêts : 10% fixe</li>
-              <li>Durée max : 3 mois</li>
-              <li>Vote collectif obligatoire</li>
-            </ul>
-          </div>
-          <div className="space-y-3">
-            <h4 className="font-bold text-gold">⚠️ Pénalités de retard</h4>
-            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-              <li>J+5 : Rappel secrétaire</li>
-              <li>J+15 : Notification bureau</li>
-              <li>J+30 : Suspension droits prêt</li>
-              <li>J+60 : Exclusion possible</li>
-            </ul>
-          </div>
-          <div className="space-y-3">
-            <h4 className="font-bold text-gold">🤝 Fonds solidarité</h4>
-            <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-              <li>Frais adhésion : 2 000 FCFA</li>
-              <li>Frais gestion mensuels</li>
-              <li>Pénalités de retard</li>
-              <li>Vote unanime pour aide</li>
-            </ul>
-          </div>
-        </div>
-      </div>
     </div>
   );
 };

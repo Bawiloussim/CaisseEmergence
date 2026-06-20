@@ -10,7 +10,7 @@ import LoanList from './components/Loans/LoanList';
 import Solidarity from './components/Solidarity/Solidarity';
 import Statistics from './components/Statistics/Statistics';
 import Reports from './components/Reports/Reports';
-import ActivityLog from './components/Activity/ActivityLog';
+import Program from './components/Program/Program';
 import { ToastProvider, useToast } from './components/UI/Toast';
 import StorageService from './services/StorageService';
 import MemberController from './controllers/MemberController';
@@ -74,8 +74,8 @@ function AppContent() {
         return <Statistics />;
       case 'reports':
         return <Reports />;
-      case 'activity':
-        return isSecretary ? <ActivityLog /> : <Dashboard isSecretary={isSecretary} />;
+      case 'program':
+        return <Program />;
       default:
         return <Dashboard isSecretary={isSecretary} />;
     }
@@ -90,7 +90,7 @@ function AppContent() {
         settings={settings}
         onUpdateSettings={updateSettings}
       />
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} isSecretary={isSecretary} />
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
       <main className="container-wide px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
         {renderContent()}
       </main>

@@ -5,8 +5,6 @@ import ContributionController from '../../controllers/ContributionController';
 import MemberController from '../../controllers/MemberController';
 import { Plus } from 'lucide-react';
 import { MONTHS_FULL } from '../../models/ContributionModel';
-import { useAuth } from '../Auth/AuthContext';
-import ActivityLogService from '../../services/ActivityLogService';
 
 const ContributionList = ({ isSecretary }) => {
   const [contributions, setContributions] = useState([]);
@@ -15,7 +13,6 @@ const ContributionList = ({ isSecretary }) => {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editData, setEditData] = useState(null);
-  const { user } = useAuth();
 
   const loadData = useCallback(async () => {
     setMembers(MemberController.getAllMembers());
@@ -32,22 +29,11 @@ const ContributionList = ({ isSecretary }) => {
     loadData();
   }, [loadData]);
 
-  const logContribution = (action, contributionData) => {
-    const member = members.find((m) => m.accountId === contributionData.memberId);
-    ActivityLogService.log({
-      action,
-      resource: 'contribution',
-      label: `${member?.name || 'Membre inconnu'} — ${MONTHS_FULL[contributionData.month] || contributionData.month} (${contributionData.amount} FCFA)`,
-      actorName: user?.name,
-    });
-  };
-
   const handleAddContribution = async (contributionData) => {
     // Édition (a un id) : mise à jour directe
     if (contributionData.id) {
       const upd = await ContributionController.updateContribution(contributionData.id, contributionData);
       if (upd.success) {
-        logContribution('update', contributionData);
         await loadData();
         setShowForm(false);
         setEditData(null);
@@ -60,7 +46,6 @@ const ContributionList = ({ isSecretary }) => {
     // Sinon on tente la création ; si elle existe déjà, on propose la mise à jour
     const result = await ContributionController.addContribution(contributionData);
     if (result.success) {
-      logContribution('create', contributionData);
       await loadData();
       setShowForm(false);
       return result;
@@ -72,7 +57,6 @@ const ContributionList = ({ isSecretary }) => {
         if (window.confirm('Une cotisation existe déjà pour ce membre et ce mois. Voulez-vous la mettre à jour ?')) {
           const upd = await ContributionController.updateContribution(existing.id, contributionData);
           if (upd.success) {
-            logContribution('update', contributionData);
             await loadData();
             setShowForm(false);
           } else {
@@ -95,12 +79,6 @@ const ContributionList = ({ isSecretary }) => {
     }
     const result = await ContributionController.deleteContribution(contribution.id);
     if (result.success) {
-      ActivityLogService.log({
-        action: 'delete',
-        resource: 'contribution',
-        label: `Cotisation de ${member?.name || 'Inconnu'} — ${MONTHS_FULL[contribution.month] || contribution.month} (${contribution.amount} FCFA) supprimée`,
-        actorName: user?.name,
-      });
       await loadData();
     }
   };

@@ -8,7 +8,6 @@ import { Plus, AlertTriangle } from 'lucide-react';
 import { useAuth } from '../Auth/AuthContext';
 import PDFService from '../../services/PDFService';
 import StorageService from '../../services/StorageService';
-import ActivityLogService from '../../services/ActivityLogService';
 
 const LoanList = ({ isSecretary }) => {
   const [showForm, setShowForm] = useState(false);
@@ -51,13 +50,6 @@ const LoanList = ({ isSecretary }) => {
     }
     const res = await LoanController.addVote(loanId, vote);
     if (res.success) {
-      const member = members.find((m) => m.accountId === res.loan.memberId);
-      ActivityLogService.log({
-        action: 'update',
-        resource: 'loan',
-        label: `Vote "${vote === 'yes' ? 'Oui' : 'Non'}" de ${currentMember.name} sur le prêt de ${member?.name || 'Inconnu'}`,
-        actorName: user?.name,
-      });
       await loadData();
     } else {
       alert(res.message || 'Erreur lors du vote');
@@ -71,12 +63,6 @@ const LoanList = ({ isSecretary }) => {
     }
     const res = await LoanController.deleteLoan(loan.id);
     if (res.success) {
-      ActivityLogService.log({
-        action: 'delete',
-        resource: 'loan',
-        label: `Prêt de ${member?.name || 'Inconnu'} — ${loan.amount} FCFA supprimé`,
-        actorName: user?.name,
-      });
       await loadData();
     }
   };
@@ -86,13 +72,6 @@ const LoanList = ({ isSecretary }) => {
     if (loanData.id) {
       const res = await LoanController.updateLoan(loanData.id, loanData);
       if (res.success) {
-        const member = members.find((m) => m.accountId === res.loan.memberId);
-        ActivityLogService.log({
-          action: 'update',
-          resource: 'loan',
-          label: `Prêt de ${member?.name || 'Inconnu'} — ${res.loan.amount} FCFA`,
-          actorName: user?.name,
-        });
         await loadData();
         setShowForm(false);
         setEditLoan(null);
@@ -109,12 +88,6 @@ const LoanList = ({ isSecretary }) => {
     const member = MemberController.getMemberByAccountId(loanData.memberId);
     const result = await LoanController.addLoan(loanData);
     if (result.success) {
-      ActivityLogService.log({
-        action: 'create',
-        resource: 'loan',
-        label: `Prêt de ${member?.name || 'Inconnu'} — ${result.loan.amount} FCFA`,
-        actorName: user?.name,
-      });
       await loadData();
       setShowForm(false);
       // génère le contrat PDF pour signature et un formulaire pré-rempli

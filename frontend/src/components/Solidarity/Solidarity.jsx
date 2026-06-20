@@ -5,8 +5,6 @@ import AidForm from './AidForm';
 import SolidarityController from '../../controllers/SolidarityController';
 import MemberController from '../../controllers/MemberController';
 import { Plus } from 'lucide-react';
-import { useAuth } from '../Auth/AuthContext';
-import ActivityLogService from '../../services/ActivityLogService';
 
 const Solidarity = ({ isSecretary }) => {
   const [showForm, setShowForm] = useState(false);
@@ -15,8 +13,6 @@ const Solidarity = ({ isSecretary }) => {
   const [aids, setAids] = useState([]);
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const { user } = useAuth();
 
   const loadData = useCallback(async () => {
     setMembers(MemberController.getAllMembers());
@@ -34,17 +30,9 @@ const Solidarity = ({ isSecretary }) => {
   }, [loadData]);
 
   const handleAddAid = async (aidData) => {
-    const member = members.find((m) => m.accountId === aidData.memberId);
-
     if (aidData.id) {
       const result = await SolidarityController.updateAid(aidData.id, aidData);
       if (result.success) {
-        ActivityLogService.log({
-          action: 'update',
-          resource: 'aid',
-          label: `Aide à ${member?.name || 'Inconnu'} — ${aidData.amount} FCFA (${aidData.motif})`,
-          actorName: user?.name,
-        });
         await loadData();
         setShowForm(false);
         setEditData(null);
@@ -56,12 +44,6 @@ const Solidarity = ({ isSecretary }) => {
 
     const result = await SolidarityController.addAid(aidData);
     if (result.success) {
-      ActivityLogService.log({
-        action: 'create',
-        resource: 'aid',
-        label: `Aide à ${member?.name || 'Inconnu'} — ${aidData.amount} FCFA (${aidData.motif})`,
-        actorName: user?.name,
-      });
       await loadData();
       setShowForm(false);
     } else if (result.errors) {
@@ -77,12 +59,6 @@ const Solidarity = ({ isSecretary }) => {
     }
     const result = await SolidarityController.deleteAid(aid.id);
     if (result.success) {
-      ActivityLogService.log({
-        action: 'delete',
-        resource: 'aid',
-        label: `Aide à ${member?.name || 'Inconnu'} — ${aid.amount} FCFA supprimée`,
-        actorName: user?.name,
-      });
       await loadData();
     }
   };

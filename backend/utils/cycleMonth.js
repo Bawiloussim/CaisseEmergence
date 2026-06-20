@@ -12,8 +12,17 @@ const MONTH_BY_JS_INDEX = {
   10: 'NOVEMBRE',
 };
 
+const MONTHS_FULL = {
+  JUIN: 'Juin',
+  JUILLET: 'Juillet',
+  AOÛT: 'Août',
+  SEPTEMBRE: 'Septembre',
+  OCTOBRE: 'Octobre',
+  NOVEMBRE: 'Novembre',
+};
+
 function getCurrentCycleMonth(date = new Date()) {
   return MONTH_BY_JS_INDEX[date.getMonth()] || null;
 }
 
-module.exports = { MONTHS, getCurrentCycleMonth };
+module.exports = { MONTHS, MONTHS_FULL, getCurrentCycleMonth };

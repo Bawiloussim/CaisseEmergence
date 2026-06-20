@@ -5,19 +5,29 @@ import SolidarityCard from './SolidarityCard';
 import MemberController from '../../controllers/MemberController';
 import ContributionController from '../../controllers/ContributionController';
 import SolidarityController from '../../controllers/SolidarityController';
-import { Calendar } from 'lucide-react';
+import MeetingFeedbackController from '../../controllers/MeetingFeedbackController';
+import { useAuth } from '../Auth/AuthContext';
+import { CYCLE_MONTHS_FULL, getCurrentCycleMonth } from '../../utils/cycleMonth';
+import { Calendar, Video } from 'lucide-react';
 
-const Dashboard = () => {
+const Dashboard = ({ onNavigateToProgram }) => {
+  const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [recentContributions, setRecentContributions] = useState([]);
   const [members, setMembers] = useState([]);
+  const [needsMeetingSignature, setNeedsMeetingSignature] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const currentMonth = getCurrentCycleMonth();
 
   useEffect(() => {
     (async () => {
       const memberList = MemberController.getAllMembers();
-      const contributions = await ContributionController.getAllContributions();
-      const solidarity = await SolidarityController.getSolidarityFund();
+      const [contributions, solidarity, meetingFeedback] = await Promise.all([
+        ContributionController.getAllContributions(),
+        SolidarityController.getSolidarityFund(),
+        MeetingFeedbackController.getAll(),
+      ]);
 
       const paidContributions = contributions.filter((c) => c.status === 'paid');
       const totalCaisse = paidContributions.reduce((sum, c) => sum + c.amount, 0);
@@ -33,9 +43,13 @@ const Dashboard = () => {
       setRecentContributions(
         [...contributions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5)
       );
+      setNeedsMeetingSignature(
+        !!currentMonth &&
+          !meetingFeedback.some((f) => f.memberId === user?.id && f.month === currentMonth)
+      );
       setLoading(false);
     })();
-  }, []);
+  }, [currentMonth, user]);
 
   const MONTH_LABELS = ['Juin','Juil','Août','Sept','Oct','Nov','Déc','Jan','Fév','Mar','Avr','Mai'];
 
@@ -51,6 +65,25 @@ const Dashboard = () => {
           <p className="text-sm text-navy"><strong>Phase pilote (Juin – Novembre 2026)</strong> — Cotisations actives. Aucun prêt ni aide accordé pendant cette période.</p>
         </div>
       </div>
+
+      {needsMeetingSignature && (
+        <div className="p-4 rounded-xl shadow-main bg-gold/10 border border-gold/30 flex items-center gap-4 flex-wrap">
+          <div className="w-10 h-10 rounded-lg bg-gold text-navy flex items-center justify-center shrink-0">
+            <Video size={18} />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm text-navy">
+              <strong>Réunion de {CYCLE_MONTHS_FULL[currentMonth]} :</strong> vous n'avez pas encore signé votre
+              présence ni donné votre avis.
+            </p>
+          </div>
+          {onNavigateToProgram && (
+            <button onClick={onNavigateToProgram} className="btn-gold text-sm shrink-0">
+              Signer maintenant
+            </button>
+          )}
+        </div>
+      )}
 
       <KPICards stats={stats} />
 

@@ -19,6 +19,15 @@ class MeetingFeedbackController {
       return { success: false, error: err.message };
     }
   }
+
+  async sendReminders() {
+    try {
+      const result = await api.post('/meeting-feedback/remind', {});
+      return { success: true, ...result };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
 }
 
 export default new MeetingFeedbackController();

@@ -1,12 +1,14 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Check, X, Smile, Frown, Users } from 'lucide-react';
+import { Check, X, Smile, Frown, Users, Mail } from 'lucide-react';
 import MemberController from '../../controllers/MemberController';
 import MeetingFeedbackController from '../../controllers/MeetingFeedbackController';
 import { useAuth } from '../Auth/AuthContext';
+import { useToast } from '../UI/Toast';
 import { CYCLE_MONTHS, CYCLE_MONTHS_FULL, getCurrentCycleMonth } from '../../utils/cycleMonth';
 
-const MeetingRollCall = () => {
+const MeetingRollCall = ({ isSecretary }) => {
   const { user } = useAuth();
+  const { showToast } = useToast();
   const [members, setMembers] = useState([]);
   const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -14,6 +16,7 @@ const MeetingRollCall = () => {
   const [satisfaction, setSatisfaction] = useState('satisfait');
   const [comment, setComment] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [sendingReminders, setSendingReminders] = useState(false);
 
   const currentMonth = getCurrentCycleMonth();
 
@@ -59,6 +62,27 @@ const MeetingRollCall = () => {
       await loadData();
     } else {
       alert(result.error || "Erreur lors de l'enregistrement");
+    }
+  };
+
+  const handleSendReminders = async () => {
+    setSendingReminders(true);
+    const result = await MeetingFeedbackController.sendReminders();
+    setSendingReminders(false);
+    if (result.success) {
+      if (result.pendingCount === 0) {
+        showToast('Tous les membres ont déjà signé ce mois-ci.', 'info');
+      } else if (result.failed?.length) {
+        showToast(
+          `${result.sent}/${result.pendingCount} rappel(s) envoyé(s) — ${result.failed.length} échec(s) (configuration email).`,
+          'warning',
+          6000
+        );
+      } else {
+        showToast(`${result.sent} rappel(s) envoyé(s) par email.`, 'success');
+      }
+    } else {
+      showToast(result.error || "Erreur lors de l'envoi des rappels", 'error');
     }
   };
 
@@ -110,9 +134,20 @@ const MeetingRollCall = () => {
 
   return (
     <div className="card">
-      <div className="flex items-center gap-2 mb-4">
-        <Users size={20} className="text-gold" />
-        <h3 className="font-playfair text-lg font-bold text-navy">Présence & avis des réunions mensuelles</h3>
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Users size={20} className="text-gold" />
+          <h3 className="font-playfair text-lg font-bold text-navy">Présence & avis des réunions mensuelles</h3>
+        </div>
+        {isSecretary && currentMonth && (
+          <button
+            onClick={handleSendReminders}
+            disabled={sendingReminders}
+            className="btn-outline flex items-center gap-2 text-sm disabled:opacity-60"
+          >
+            <Mail size={14} /> {sendingReminders ? 'Envoi…' : "Rappel par email"}
+          </button>
+        )}
       </div>
 
       {currentMonth ? (

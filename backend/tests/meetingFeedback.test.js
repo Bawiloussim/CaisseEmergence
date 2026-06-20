@@ -117,3 +117,46 @@ describe('POST /api/meeting-feedback', () => {
     expect(res.body[0].comment).toBe('Présent');
   });
 });
+
+describe('POST /api/meeting-feedback/remind', () => {
+  it('refuse le rappel à un membre non secrétaire', async () => {
+    setCycleDate('2026-06-15');
+    const { memberToken } = await createSecretaryAndMember();
+
+    const res = await request(app)
+      .post('/api/meeting-feedback/remind')
+      .set('Authorization', `Bearer ${memberToken}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it("ne compte que les membres n'ayant pas encore signé le mois en cours", async () => {
+    setCycleDate('2026-06-15');
+    const { secToken, memberToken } = await createSecretaryAndMember();
+
+    // Le membre signe : il ne doit plus faire partie des rappels.
+    await request(app)
+      .post('/api/meeting-feedback')
+      .set('Authorization', `Bearer ${memberToken}`)
+      .send({ present: true, satisfaction: 'satisfait' });
+
+    const res = await request(app)
+      .post('/api/meeting-feedback/remind')
+      .set('Authorization', `Bearer ${secToken}`);
+
+    expect(res.status).toBe(200);
+    // Seul le secrétaire (qui n'a pas signé) reste en attente.
+    expect(res.body.pendingCount).toBe(1);
+  });
+
+  it("refuse en dehors d'un mois de réunion ouvert", async () => {
+    setCycleDate('2026-01-15');
+    const { secToken } = await createSecretaryAndMember();
+
+    const res = await request(app)
+      .post('/api/meeting-feedback/remind')
+      .set('Authorization', `Bearer ${secToken}`);
+
+    expect(res.status).toBe(400);
+  });
+});

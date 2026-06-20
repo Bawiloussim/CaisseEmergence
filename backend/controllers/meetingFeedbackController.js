@@ -1,7 +1,9 @@
 const MeetingFeedback = require('../models/MeetingFeedback');
 const Member = require('../models/Member');
 const logAction = require('../utils/logAction');
-const { getCurrentCycleMonth } = require('../utils/cycleMonth');
+const sendEmail = require('../utils/sendEmail');
+const { meetingReminderEmail } = require('../utils/emailTemplates');
+const { getCurrentCycleMonth, MONTHS_FULL } = require('../utils/cycleMonth');
 
 // GET /api/meeting-feedback — accessible à tout membre connecté (lecture),
 // pour que chacun voie qui a signé sa présence et les avis du mois.
@@ -49,4 +51,44 @@ const upsertMyMeetingFeedback = async (req, res) => {
   res.json(entry);
 };
 
-module.exports = { getMeetingFeedback, upsertMyMeetingFeedback };
+// POST /api/meeting-feedback/remind — secrétaire uniquement. Envoie un
+// rappel par email à chaque membre n'ayant pas encore signé sa présence
+// pour le mois en cours. Best-effort : l'échec d'un envoi n'empêche pas
+// les autres.
+const sendMeetingReminders = async (req, res) => {
+  const currentMonth = getCurrentCycleMonth();
+  if (!currentMonth) {
+    return res.status(400).json({ message: 'Aucune réunion mensuelle ouverte actuellement.' });
+  }
+
+  const [members, entries] = await Promise.all([
+    Member.find(),
+    MeetingFeedback.find({ month: currentMonth }),
+  ]);
+  const signedIds = new Set(entries.map((e) => String(e.memberId)));
+  const pending = members.filter((m) => !signedIds.has(String(m._id)));
+
+  let sent = 0;
+  const failed = [];
+  for (const member of pending) {
+    try {
+      await sendEmail({
+        to: member.email,
+        subject: `Rappel — Réunion de ${MONTHS_FULL[currentMonth]} — ${process.env.ASSOCIATION_NAME || 'La Caisse Emergence'}`,
+        html: meetingReminderEmail({
+          name: member.name,
+          month: MONTHS_FULL[currentMonth],
+          associationName: process.env.ASSOCIATION_NAME || 'La Caisse Emergence',
+          loginUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+        }),
+      });
+      sent += 1;
+    } catch (err) {
+      failed.push({ name: member.name, email: member.email, error: err.message });
+    }
+  }
+
+  res.json({ sent, failed, pendingCount: pending.length });
+};
+
+module.exports = { getMeetingFeedback, upsertMyMeetingFeedback, sendMeetingReminders };

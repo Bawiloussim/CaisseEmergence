@@ -61,7 +61,7 @@ function AppContent() {
   const renderContent = () => {
     switch(activeTab) {
       case 'dashboard':
-        return <Dashboard isSecretary={isSecretary} />;
+        return <Dashboard isSecretary={isSecretary} onNavigateToProgram={() => setActiveTab('program')} />;
       case 'members':
         return <MemberList isSecretary={isSecretary} />;
       case 'contributions':
@@ -75,9 +75,9 @@ function AppContent() {
       case 'reports':
         return <Reports />;
       case 'program':
-        return <Program />;
+        return <Program isSecretary={isSecretary} />;
       default:
-        return <Dashboard isSecretary={isSecretary} />;
+        return <Dashboard isSecretary={isSecretary} onNavigateToProgram={() => setActiveTab('program')} />;
     }
   };
 

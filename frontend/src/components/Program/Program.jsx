@@ -1,5 +1,7 @@
-import { Calendar, Video, Wallet, HandCoins, AlertTriangle, HandHeart } from 'lucide-react';
+import { Calendar, Video, Wallet, HandCoins, AlertTriangle, HandHeart, MessageCircle } from 'lucide-react';
 import MeetingRollCall from './MeetingRollCall';
+
+const WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/DwtJzJBIuq60HJOyZabcae';
 
 const STEPS = [
   {
@@ -25,7 +27,7 @@ const STEPS = [
   },
 ];
 
-const Program = () => {
+const Program = ({ isSecretary }) => {
   return (
     <div className="space-y-6 animate-fade-in">
       <div>
@@ -55,14 +57,24 @@ const Program = () => {
 
       <div className="alert-info bg-gold/10">
         <div className="bar" style={{ backgroundColor: '#c48a21' }} />
-        <p className="text-sm text-navy">
-          <strong>Obligation de réunion :</strong> après chaque mois de cotisation, tous les membres doivent se
-          regrouper en appel visioconférence. Cette réunion n'est pas facultative — elle conditionne la
-          transparence et les décisions collectives de la caisse.
-        </p>
+        <div className="flex-1">
+          <p className="text-sm text-navy">
+            <strong>Obligation de réunion :</strong> après chaque mois de cotisation, tous les membres doivent se
+            regrouper en appel visioconférence. Cette réunion n'est pas facultative — elle conditionne la
+            transparence et les décisions collectives de la caisse.
+          </p>
+          <a
+            href={WHATSAPP_GROUP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mt-3 text-sm font-semibold text-green-700 hover:text-green-800"
+          >
+            <MessageCircle size={16} /> Rejoindre le groupe WhatsApp de la caisse
+          </a>
+        </div>
       </div>
 
-      <MeetingRollCall />
+      <MeetingRollCall isSecretary={isSecretary} />
 
       <div className="card">
         <h3 className="font-playfair text-lg font-bold text-navy mb-4">📜 Charte — Règles essentielles</h3>

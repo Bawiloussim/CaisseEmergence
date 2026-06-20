@@ -49,4 +49,36 @@ function invitationEmail({ name, email, tempPassword, associationName, loginUrl 
   </div>`;
 }
 
-module.exports = { invitationEmail };
+/**
+ * Rappel envoyé à un membre qui n'a pas encore signé sa présence ni donné
+ * son avis pour la réunion mensuelle en visioconférence du mois en cours.
+ */
+function meetingReminderEmail({ name, month, associationName, loginUrl }) {
+  return `
+  <div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2a24;">
+    <h2 style="color:#09324e; margin-bottom: 4px;">${associationName}</h2>
+    <p style="color:#8a978f; margin-top:0; letter-spacing:1px; font-size:12px; text-transform:uppercase;">
+      Épargne · Crédit · Solidarité
+    </p>
+
+    <p>Bonjour ${name},</p>
+    <p>
+      Vous n'avez pas encore signé votre présence ni donné votre avis pour la
+      réunion mensuelle de <strong>${month}</strong>, en appel
+      visioconférence. Cette réunion est obligatoire pour tous les membres.
+    </p>
+
+    <p style="margin: 24px 0;">
+      <a href="${loginUrl}"
+         style="background:#c48a21; color:#072434; padding:12px 24px; border-radius:9999px; text-decoration:none; font-weight:bold; display:inline-block;">
+        Signer ma présence
+      </a>
+    </p>
+
+    <p style="font-size:12px; color:#8a978f;">
+      Rendez-vous sur l'onglet « Programme & Charte » de votre espace membre.
+    </p>
+  </div>`;
+}
+
+module.exports = { invitationEmail, meetingReminderEmail };

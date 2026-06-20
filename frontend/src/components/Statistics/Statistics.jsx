@@ -7,6 +7,7 @@ import { TrendingUp, PieChart as PieChartIcon, BarChart3, CalendarDays } from 'l
 import ContributionController from '../../controllers/ContributionController';
 import LoanController from '../../controllers/LoanController';
 import MemberController from '../../controllers/MemberController';
+import MeetingFeedbackController from '../../controllers/MeetingFeedbackController';
 import { MONTHS, MONTHS_FULL } from '../../models/ContributionModel';
 
 const COLORS = ['#c48a21', '#0f3751', '#4ade80', '#56a7d2', '#f87171', '#a78bfa', '#fb923c', '#34d399'];
@@ -44,20 +45,23 @@ const Statistics = () => {
   const [loans, setLoans] = useState([]);
   const [members, setMembers] = useState([]);
   const [contributions, setContributions] = useState([]);
+  const [meetingFeedback, setMeetingFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const memberList = MemberController.getAllMembers();
-      const [totals, loanList, contribList] = await Promise.all([
+      const [totals, loanList, contribList, feedbackList] = await Promise.all([
         ContributionController.getMonthlyTotals(),
         LoanController.getAllLoans(),
         ContributionController.getAllContributions(),
+        MeetingFeedbackController.getAll(),
       ]);
       setMembers(memberList);
       setMonthlyTotals(totals);
       setLoans(loanList);
       setContributions(contribList);
+      setMeetingFeedback(feedbackList);
       setLoading(false);
     })();
   }, []);
@@ -103,6 +107,20 @@ const Statistics = () => {
     const rest = data.slice(7).reduce((s, d) => s + d.value, 0);
     return [...top, { name: 'Autres', value: rest }];
   }, [members, contributions]);
+
+  const meetingStats = useMemo(() => {
+    return MONTHS.map((month) => {
+      const entries = meetingFeedback.filter((f) => f.month === month);
+      return {
+        month: MONTHS_FULL[month],
+        Présents: entries.filter((f) => f.present).length,
+        Satisfaits: entries.filter((f) => f.satisfaction === 'satisfait').length,
+        Insatisfaits: entries.filter((f) => f.satisfaction === 'insatisfait').length,
+      };
+    });
+  }, [meetingFeedback]);
+
+  const hasMeetingData = meetingFeedback.length > 0;
 
   const stats = useMemo(() => {
     const monthsWithData = MONTHS.filter((m) => (monthlyTotals[m]?.totalAmount || 0) > 0);
@@ -188,6 +206,26 @@ const Statistics = () => {
               ))}
             </ul>
           </div>
+        )}
+      </div>
+
+      <div className="card">
+        <h3 className="font-playfair text-lg font-bold text-navy mb-4">Participation & satisfaction aux réunions mensuelles</h3>
+        {!hasMeetingData ? (
+          <p className="text-center text-gray-400 py-12">Aucune réunion signée pour le moment</p>
+        ) : (
+          <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={meetingStats} margin={{ left: 0, right: 10 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#eee" />
+              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} allowDecimals={false} width={30} />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="Présents" fill="#0f3751" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Satisfaits" fill="#4ade80" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="Insatisfaits" fill="#f87171" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         )}
       </div>
     </div>

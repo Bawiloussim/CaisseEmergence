@@ -81,7 +81,7 @@ const Reports = () => {
     <div className="space-y-6 animate-fade-in">
       <div className="card">
         <h3 className="font-playfair text-lg font-bold text-navy mb-4">📄 Génération de rapports</h3>
-        <p className="text-gray-500 mb-6">Générez et téléchargez les rapports officiels de la Caisse Le Tremplin Mutuel au format PDF.</p>
+        <p className="text-gray-500 mb-6">Générez et téléchargez les rapports officiels de la Caisse Émergence au format PDF.</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {reports.map(report => (

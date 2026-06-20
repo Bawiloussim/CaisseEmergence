@@ -304,7 +304,7 @@ class PDFService {
     doc.text('Date : ____________________', 110, y + 28);
 
     this.addFooter(doc);
-    doc.save('formulaire_demande_pret_tremplin_mutuel.pdf');
+    doc.save('formulaire_demande_pret_caisse_emergence.pdf');
   }
 
   // ===== FORMULAIRE PDF REMPLISSABLE (AcroForm avec pdf-lib) =====

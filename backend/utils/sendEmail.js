@@ -1,27 +1,39 @@
-const RESEND_API_URL = 'https://api.resend.com/emails';
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
+
+function parseEmailFrom(emailFrom) {
+  const match = emailFrom.match(/^(.*)<(.+)>$/);
+  if (match) {
+    return { name: match[1].trim().replace(/^"|"$/g, ''), email: match[2].trim() };
+  }
+  return { name: undefined, email: emailFrom.trim() };
+}
 
 /**
- * Envoie un email via l'API HTTP de Resend (port 443, jamais bloqué
+ * Envoie un email via l'API HTTP de Brevo (port 443, jamais bloqué
  * par les hébergeurs cloud — contrairement au SMTP qui timeout
- * souvent vers Gmail depuis Render).
+ * souvent vers Gmail depuis Render). L'adresse EMAIL_FROM doit être
+ * un expéditeur vérifié dans Brevo (Senders, Domains & Dedicated IPs).
  * @param {{ to: string, subject: string, html: string }} options
  */
 async function sendEmail({ to, subject, html }) {
-  if (!process.env.RESEND_API_KEY) {
-    throw new Error('Configuration email manquante : renseignez RESEND_API_KEY dans le fichier .env');
+  if (!process.env.BREVO_API_KEY) {
+    throw new Error('Configuration email manquante : renseignez BREVO_API_KEY dans le fichier .env');
   }
 
-  const response = await fetch(RESEND_API_URL, {
+  const sender = parseEmailFrom(process.env.EMAIL_FROM || 'La Caisse Emergence <no-reply@example.com>');
+
+  const response = await fetch(BREVO_API_URL, {
     method: 'POST',
     headers: {
-      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'api-key': process.env.BREVO_API_KEY,
       'Content-Type': 'application/json',
+      Accept: 'application/json',
     },
     body: JSON.stringify({
-      from: process.env.EMAIL_FROM || 'La Caisse Emergence <onboarding@resend.dev>',
-      to,
+      sender,
+      to: [{ email: to }],
       subject,
-      html,
+      htmlContent: html,
     }),
   });
 

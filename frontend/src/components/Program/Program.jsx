@@ -2,6 +2,7 @@ import { Calendar, Video, Wallet, HandCoins, AlertTriangle, HandHeart, MessageCi
 import MeetingRollCall from './MeetingRollCall';
 
 const WHATSAPP_GROUP_URL = 'https://chat.whatsapp.com/DwtJzJBIuq60HJOyZabcae';
+const GOOGLE_MEET_URL = 'https://meet.google.com/bev-cgkd-zik';
 const FLOOZ_NUMBER = '79854438';
 
 const STEPS = [
@@ -64,14 +65,24 @@ const Program = ({ isSecretary }) => {
             regrouper en appel visioconférence. Cette réunion n'est pas facultative — elle conditionne la
             transparence et les décisions collectives de la caisse.
           </p>
-          <a
-            href={WHATSAPP_GROUP_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 mt-3 text-sm font-semibold text-green-700 hover:text-green-800"
-          >
-            <MessageCircle size={16} /> Rejoindre le groupe WhatsApp de la caisse
-          </a>
+          <div className="flex flex-wrap gap-4 mt-3">
+            <a
+              href={GOOGLE_MEET_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-navy hover:text-navy/80"
+            >
+              <Video size={16} /> Rejoindre la réunion (Google Meet)
+            </a>
+            <a
+              href={WHATSAPP_GROUP_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-800"
+            >
+              <MessageCircle size={16} /> Rejoindre le groupe WhatsApp de la caisse
+            </a>
+          </div>
         </div>
       </div>
 

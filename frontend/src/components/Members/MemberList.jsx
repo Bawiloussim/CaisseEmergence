@@ -11,9 +11,11 @@ import PDFService from '../../services/PDFService';
 import StorageService from '../../services/StorageService';
 import api from '../../services/apiClient';
 import { useToast } from '../UI/Toast';
+import { useAuth } from '../Auth/AuthContext';
 
 const MemberList = ({ isSecretary }) => {
   const { showToast } = useToast();
+  const { user } = useAuth();
   const [members, setMembers] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [editMember, setEditMember] = useState(null);
@@ -230,6 +232,7 @@ const MemberList = ({ isSecretary }) => {
             onRequestLoan={handleRequestLoan}
             onResendInvitation={handleResendInvitation}
             isSecretary={isSecretary}
+            canRequestLoan={isSecretary || selectedMember.accountId === user?.id}
           />
         </Modal>
       )}
@@ -240,6 +243,7 @@ const MemberList = ({ isSecretary }) => {
             members={[loanMember].filter(Boolean)}
             onClose={() => { setShowLoanForm(false); setLoanMember(null); }}
             onSubmit={handleAddLoan}
+            isSecretary={isSecretary}
           />
         </Modal>
       )}

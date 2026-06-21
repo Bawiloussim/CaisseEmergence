@@ -145,16 +145,21 @@ const LoanList = ({ isSecretary }) => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <LoanSimulator members={members} />
 
-        {isSecretary && (
-          <div className="card">
-            <button
-              onClick={() => { setEditLoan(null); setShowForm(true); }}
-              className="w-full bg-gold text-navy py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-gold-light transition-all"
-            >
-              <Plus size={20} /> Nouvelle demande de prêt
-            </button>
-          </div>
-        )}
+        <div className="card">
+          <button
+            onClick={() => {
+              if (!isSecretary && !currentMember) {
+                alert('Votre compte membre est introuvable. Rechargez la page et réessayez.');
+                return;
+              }
+              setEditLoan(null);
+              setShowForm(true);
+            }}
+            className="w-full bg-gold text-navy py-3 rounded-lg font-semibold flex items-center justify-center gap-2 hover:bg-gold-light transition-all"
+          >
+            <Plus size={20} /> Nouvelle demande de prêt
+          </button>
+        </div>
       </div>
 
       <div className="card">
@@ -267,8 +272,9 @@ const LoanList = ({ isSecretary }) => {
         <LoanForm
           onClose={() => { setShowForm(false); setEditLoan(null); }}
           onSubmit={handleAddLoan}
-          members={members}
+          members={isSecretary ? members : [currentMember].filter(Boolean)}
           initialData={editLoan}
+          isSecretary={isSecretary}
         />
       )}
     </div>

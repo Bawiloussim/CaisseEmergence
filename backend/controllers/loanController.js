@@ -27,9 +27,17 @@ const getLoans = async (req, res) => {
   res.json(loans);
 };
 
-// POST /api/loans — secrétaire uniquement
+// POST /api/loans — tout membre connecté peut demander un prêt pour
+// lui-même ; seul le secrétaire peut en faire la demande pour un autre
+// membre ou définir directement un statut autre que "en attente".
 const createLoan = async (req, res) => {
-  const { memberId, amount, duration, motif, status, requestDate } = req.body;
+  const { amount, duration, motif, requestDate } = req.body;
+  let { memberId, status } = req.body;
+
+  if (req.user.accountRole !== 'secretaire') {
+    memberId = String(req.user._id);
+    status = 'pending';
+  }
 
   if (!memberId) return res.status(400).json({ message: 'Membre requis' });
   if (!amount || amount <= 0) return res.status(400).json({ message: 'Montant invalide' });
@@ -124,14 +132,19 @@ const voteLoan = async (req, res) => {
     loan.votes.push({ memberId: req.user._id, vote });
   }
 
+  // Le demandeur ne peut jamais voter sur sa propre demande : on calcule
+  // la majorité sur les membres pouvant réellement voter, pas sur l'effectif
+  // total. Sinon, même un "oui" unanime des votants éligibles pourrait ne
+  // jamais atteindre le seuil dans une petite caisse.
   const totalMembers = await Member.countDocuments();
+  const eligibleVoters = totalMembers - 1;
   const yes = loan.votes.filter((v) => v.vote === 'yes').length;
   const no = loan.votes.filter((v) => v.vote === 'no').length;
 
-  if (yes > totalMembers / 2) {
+  if (eligibleVoters > 0 && yes > eligibleVoters / 2) {
     loan.status = 'approved';
     loan.approvalDate = new Date().toISOString().split('T')[0];
-  } else if (no > totalMembers / 2) {
+  } else if (eligibleVoters > 0 && no > eligibleVoters / 2) {
     loan.status = 'rejected';
     loan.approvalDate = new Date().toISOString().split('T')[0];
   }

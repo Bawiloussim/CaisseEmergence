@@ -7,7 +7,7 @@ import { MONTHS, MONTHS_FULL } from '../../models/ContributionModel';
 import PDFService from '../../services/PDFService';
 import StorageService from '../../services/StorageService';
 
-const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onRequestLoan, onResendInvitation }) => {
+const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onRequestLoan, onResendInvitation, canRequestLoan }) => {
   const [showQRCard, setShowQRCard] = useState(false);
   const [contributions, setContributions] = useState([]);
 
@@ -128,15 +128,17 @@ const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onReques
             <QrCode size={16} /> Carte de membre
           </button>
 
-          <button
-            onClick={() => {
-              onClose();
-              if (typeof onRequestLoan === 'function') onRequestLoan(member);
-            }}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
-          >
-            Demander un prêt
-          </button>
+          {canRequestLoan && (
+            <button
+              onClick={() => {
+                onClose();
+                if (typeof onRequestLoan === 'function') onRequestLoan(member);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-all"
+            >
+              Demander un prêt
+            </button>
+          )}
 
           {isSecretary && (
             <>

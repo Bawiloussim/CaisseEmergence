@@ -2,9 +2,9 @@ import { useState, useEffect } from 'react';
 import Modal from '../UI/Modal';
 import ContributionController from '../../controllers/ContributionController';
 
-const LoanForm = ({ onClose, onSubmit, members, initialData = null }) => {
+const LoanForm = ({ onClose, onSubmit, members, initialData = null, isSecretary = false }) => {
   const [formData, setFormData] = useState(() => ({
-    memberId: initialData?.memberId || '',
+    memberId: initialData?.memberId || (!isSecretary && members.length === 1 ? members[0].accountId : ''),
     amount: initialData?.amount ?? 50000,
     duration: initialData?.duration ?? 3,
     motif: initialData?.motif || '',
@@ -55,18 +55,22 @@ const LoanForm = ({ onClose, onSubmit, members, initialData = null }) => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">Membre *</label>
-          <select
-            name="memberId"
-            value={formData.memberId}
-            onChange={handleChange}
-            className="input"
-            required
-          >
-            <option value="">Sélectionner un membre</option>
-            {members.map(member => (
-              <option key={member.accountId} value={member.accountId}>{member.name}</option>
-            ))}
-          </select>
+          {isSecretary ? (
+            <select
+              name="memberId"
+              value={formData.memberId}
+              onChange={handleChange}
+              className="input"
+              required
+            >
+              <option value="">Sélectionner un membre</option>
+              {members.map(member => (
+                <option key={member.accountId} value={member.accountId}>{member.name}</option>
+              ))}
+            </select>
+          ) : (
+            <input type="text" className="input bg-gray-50" value={members[0]?.name || ''} disabled />
+          )}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -111,19 +115,21 @@ const LoanForm = ({ onClose, onSubmit, members, initialData = null }) => {
             />
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
-            <select
-              name="status"
-              value={formData.status}
-              onChange={handleChange}
-              className="input"
-            >
-              <option value="pending">En attente de vote</option>
-              <option value="approved">Approuvé</option>
-              <option value="rejected">Refusé</option>
-            </select>
-          </div>
+          {isSecretary && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Statut</label>
+              <select
+                name="status"
+                value={formData.status}
+                onChange={handleChange}
+                className="input"
+              >
+                <option value="pending">En attente de vote</option>
+                <option value="approved">Approuvé</option>
+                <option value="rejected">Refusé</option>
+              </select>
+            </div>
+          )}
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Date de demande</label>

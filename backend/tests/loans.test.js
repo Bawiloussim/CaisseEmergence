@@ -44,14 +44,28 @@ describe('POST /api/loans', () => {
     expect(res.body.monthlyPayment).toBe(5500);
   });
 
-  it('refuse la création à un membre non secrétaire', async () => {
+  it('permet à un membre non secrétaire de demander un prêt pour lui-même', async () => {
     const { borrower, borrowerToken } = await setup();
     const res = await request(app)
       .post('/api/loans')
       .set('Authorization', `Bearer ${borrowerToken}`)
       .send({ memberId: borrower._id, amount: 10000 });
 
-    expect(res.status).toBe(403);
+    expect(res.status).toBe(201);
+    expect(String(res.body.memberId)).toBe(String(borrower._id));
+    expect(res.body.status).toBe('pending');
+  });
+
+  it('ignore le memberId et le statut fournis par un membre non secrétaire (force soi-même et "pending")', async () => {
+    const { borrower, voter, borrowerToken } = await setup();
+    const res = await request(app)
+      .post('/api/loans')
+      .set('Authorization', `Bearer ${borrowerToken}`)
+      .send({ memberId: voter._id, amount: 10000, status: 'approved' });
+
+    expect(res.status).toBe(201);
+    expect(String(res.body.memberId)).toBe(String(borrower._id));
+    expect(res.body.status).toBe('pending');
   });
 });
 
@@ -90,5 +104,48 @@ describe('POST /api/loans/:id/vote', () => {
       .get('/api/loans')
       .set('Authorization', `Bearer ${voterToken}`);
     expect(listRes.body).toHaveLength(1);
+  });
+
+  it('approuve automatiquement quand tous les votants éligibles ont voté oui', async () => {
+    const { borrower, secToken, voterToken } = await setup();
+    const loan = await request(app)
+      .post('/api/loans')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: borrower._id, amount: 10000 });
+
+    // 1 seul "oui" sur 2 votants éligibles (secrétaire + votant) : pas encore majoritaire.
+    const firstVote = await request(app)
+      .post(`/api/loans/${loan.body._id}/vote`)
+      .set('Authorization', `Bearer ${voterToken}`)
+      .send({ vote: 'yes' });
+    expect(firstVote.body.status).toBe('pending');
+
+    // Le 2e votant éligible vote aussi "oui" : unanimité atteinte → approuvé.
+    const secondVote = await request(app)
+      .post(`/api/loans/${loan.body._id}/vote`)
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ vote: 'yes' });
+    expect(secondVote.body.status).toBe('approved');
+  });
+
+  it("approuve automatiquement même avec un seul votant éligible (petite caisse)", async () => {
+    // Seulement 2 membres au total : le secrétaire et l'emprunteur. Le
+    // secrétaire est donc le seul votant éligible — son "oui" doit suffire
+    // à approuver le prêt, pas rester bloqué faute de majorité absolue.
+    await Member.create({ name: 'Secrétaire', email: 'sec@example.com', password: 'secret123', accountRole: 'secretaire' });
+    const borrower = await Member.create({ name: 'Emprunteur', email: 'emprunteur@example.com', password: 'secret123', accountRole: 'membre' });
+    const secToken = await loginAs('sec@example.com', 'secret123');
+
+    const loan = await request(app)
+      .post('/api/loans')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: borrower._id, amount: 10000 });
+
+    const voteRes = await request(app)
+      .post(`/api/loans/${loan.body._id}/vote`)
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ vote: 'yes' });
+
+    expect(voteRes.body.status).toBe('approved');
   });
 });

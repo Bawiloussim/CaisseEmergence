@@ -14,6 +14,10 @@ const memberSchema = new mongoose.Schema(
     },
     password: { type: String, required: true, select: false },
 
+    // ── Réinitialisation de mot de passe (code à 6 chiffres par email) ──
+    resetPasswordCodeHash: { type: String, select: false, default: null },
+    resetPasswordExpires: { type: Date, select: false, default: null },
+
     // 'secretaire' = accès complet (lecture + écriture)
     // 'membre'     = accès en lecture seule
     accountRole: {

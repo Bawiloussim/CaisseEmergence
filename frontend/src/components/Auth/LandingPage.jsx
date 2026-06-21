@@ -4,10 +4,11 @@ import {
   ChevronLeft, ChevronRight, Sparkles, Phone, MapPin, Menu,
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
+import ForgotPasswordModal from './ForgotPasswordModal';
 import logo from '../../assets/logo/2.jpeg';
 
 /* ── Login modal ─────────────────────────────────────── */
-function LoginModal({ onClose }) {
+function LoginModal({ onClose, onForgotPassword }) {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -74,6 +75,11 @@ function LoginModal({ onClose }) {
             <button type="submit" disabled={submitting}
               className="btn-gold w-full py-3 text-base disabled:opacity-60">
               {submitting ? 'Connexion…' : 'Se connecter'}
+            </button>
+
+            <button type="button" onClick={onForgotPassword}
+              className="text-xs text-navy/60 hover:text-navy text-center w-full">
+              Mot de passe oublié ?
             </button>
           </form>
 
@@ -143,6 +149,7 @@ const INFO_ITEMS = [
 /* ── Landing page ────────────────────────────────────── */
 const LandingPage = () => {
   const [showLogin, setShowLogin] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [slide, setSlide] = useState(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -368,7 +375,13 @@ const LandingPage = () => {
       </footer>
 
       {/* ── Login modal ── */}
-      {showLogin && <LoginModal onClose={() => setShowLogin(false)} />}
+      {showLogin && (
+        <LoginModal
+          onClose={() => setShowLogin(false)}
+          onForgotPassword={() => { setShowLogin(false); setShowForgotPassword(true); }}
+        />
+      )}
+      {showForgotPassword && <ForgotPasswordModal onClose={() => setShowForgotPassword(false)} />}
     </div>
   );
 };

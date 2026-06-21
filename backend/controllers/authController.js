@@ -1,5 +1,9 @@
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const bcrypt = require('bcryptjs');
 const Member = require('../models/Member');
+const sendEmail = require('../utils/sendEmail');
+const { resetCodeEmail } = require('../utils/emailTemplates');
 
 const generateToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -102,4 +106,86 @@ const updateProfile = async (req, res) => {
   res.json({ user: toPublicUser(member) });
 };
 
-module.exports = { login, getMe, changePassword, updateProfile };
+/**
+ * POST /api/auth/forgot-password
+ * Génère un code à 6 chiffres, valable 15 minutes, et l'envoie par email.
+ * Réponse volontairement générique dans tous les cas : on ne révèle
+ * jamais si un email correspond ou non à un compte existant.
+ */
+const forgotPassword = async (req, res) => {
+  const { email } = req.body;
+  const genericMessage = { message: 'Si cet email correspond à un compte, un code vient de lui être envoyé.' };
+
+  if (!email) return res.status(400).json({ message: 'Email requis' });
+
+  const member = await Member.findOne({ email: email.toLowerCase().trim() }).select('+resetPasswordExpires');
+  if (!member) return res.json(genericMessage);
+
+  // Anti-spam : pas de nouveau code moins d'une minute après le précédent
+  // (le code expire 15 min après son envoi).
+  if (member.resetPasswordExpires && member.resetPasswordExpires.getTime() - Date.now() > 14 * 60 * 1000) {
+    return res.json(genericMessage);
+  }
+
+  const code = String(crypto.randomInt(100000, 1000000));
+  const salt = await bcrypt.genSalt(10);
+  member.resetPasswordCodeHash = await bcrypt.hash(code, salt);
+  member.resetPasswordExpires = new Date(Date.now() + 15 * 60 * 1000);
+  await member.save();
+
+  try {
+    await sendEmail({
+      to: member.email,
+      subject: `Code de réinitialisation — ${process.env.ASSOCIATION_NAME || 'La Caisse Emergence'}`,
+      html: resetCodeEmail({
+        name: member.name,
+        code,
+        associationName: process.env.ASSOCIATION_NAME || 'La Caisse Emergence',
+      }),
+    });
+  } catch (err) {
+    console.error("Échec d'envoi du code de réinitialisation :", err.message);
+  }
+
+  res.json(genericMessage);
+};
+
+/**
+ * POST /api/auth/reset-password
+ * Vérifie le code à 6 chiffres et remplace le mot de passe — aucune
+ * suppression/recréation de compte n'est nécessaire, les cotisations,
+ * prêts et avis du membre restent intacts.
+ */
+const resetPassword = async (req, res) => {
+  const { email, code, newPassword } = req.body;
+
+  if (!email || !code || !newPassword) {
+    return res.status(400).json({ message: 'Email, code et nouveau mot de passe requis' });
+  }
+  if (newPassword.length < 6) {
+    return res.status(400).json({ message: 'Le nouveau mot de passe doit contenir au moins 6 caractères' });
+  }
+
+  const member = await Member.findOne({ email: email.toLowerCase().trim() }).select(
+    '+resetPasswordCodeHash +resetPasswordExpires'
+  );
+
+  if (!member?.resetPasswordCodeHash || !member.resetPasswordExpires || member.resetPasswordExpires.getTime() < Date.now()) {
+    return res.status(400).json({ message: 'Code invalide ou expiré' });
+  }
+
+  const isMatch = await bcrypt.compare(code, member.resetPasswordCodeHash);
+  if (!isMatch) {
+    return res.status(400).json({ message: 'Code invalide ou expiré' });
+  }
+
+  member.password = newPassword;
+  member.mustChangePassword = false;
+  member.resetPasswordCodeHash = null;
+  member.resetPasswordExpires = null;
+  await member.save();
+
+  res.json({ message: 'Mot de passe réinitialisé avec succès' });
+};
+
+module.exports = { login, getMe, changePassword, updateProfile, forgotPassword, resetPassword };

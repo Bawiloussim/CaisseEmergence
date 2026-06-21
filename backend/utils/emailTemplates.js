@@ -83,4 +83,35 @@ function meetingReminderEmail({ name, month, associationName, loginUrl }) {
   </div>`;
 }
 
-module.exports = { invitationEmail, meetingReminderEmail };
+/**
+ * Code à 6 chiffres envoyé à un membre qui a demandé la réinitialisation
+ * de son mot de passe (« mot de passe oublié »). Valide 15 minutes.
+ */
+function resetCodeEmail({ name, code, associationName }) {
+  return `
+  <div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2a24;">
+    <h2 style="color:#09324e; margin-bottom: 4px;">${associationName}</h2>
+    <p style="color:#8a978f; margin-top:0; letter-spacing:1px; font-size:12px; text-transform:uppercase;">
+      Épargne · Crédit · Solidarité
+    </p>
+
+    <p>Bonjour ${name},</p>
+    <p>
+      Vous avez demandé à réinitialiser votre mot de passe. Voici votre code
+      de vérification, valable 15 minutes :
+    </p>
+
+    <p style="margin: 24px 0; text-align:center;">
+      <span style="display:inline-block; background:#f7f4f4; padding:16px 28px; border-radius:12px; font-size:28px; font-weight:bold; letter-spacing:6px; color:#09324e;">
+        ${code}
+      </span>
+    </p>
+
+    <p style="font-size:12px; color:#8a978f;">
+      Si vous n'êtes pas à l'origine de cette demande, ignorez simplement cet
+      email : votre mot de passe actuel reste inchangé.
+    </p>
+  </div>`;
+}
+
+module.exports = { invitationEmail, meetingReminderEmail, resetCodeEmail };

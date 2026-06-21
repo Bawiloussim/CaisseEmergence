@@ -58,6 +58,34 @@ export function AuthProvider({ children }) {
     }
   }
 
+  /**
+   * Mot de passe oublié — étape 1 : demande l'envoi d'un code à 6 chiffres
+   * par email. La réponse est toujours générique (ne révèle pas si
+   * l'email correspond à un compte).
+   */
+  async function forgotPassword(email) {
+    try {
+      const data = await api.post('/auth/forgot-password', { email }, { auth: false });
+      return { success: true, message: data.message };
+    } catch (err) {
+      return { success: false, message: err.message || "Erreur lors de l'envoi du code." };
+    }
+  }
+
+  /**
+   * Mot de passe oublié — étape 2 : vérifie le code et remplace le mot de
+   * passe. Aucune suppression/recréation de compte n'est nécessaire : les
+   * cotisations, prêts et avis du membre restent intacts.
+   */
+  async function resetPassword({ email, code, newPassword }) {
+    try {
+      await api.post('/auth/reset-password', { email, code, newPassword }, { auth: false });
+      return { success: true };
+    } catch (err) {
+      return { success: false, message: err.message || 'Code invalide ou expiré.' };
+    }
+  }
+
   async function updateProfile({ name, email }) {
     try {
       const data = await api.put('/auth/profile', { name, email });
@@ -75,6 +103,8 @@ export function AuthProvider({ children }) {
     login,
     logout,
     changePassword,
+    forgotPassword,
+    resetPassword,
     updateProfile,
     isAuthenticated: !!user,
     isSecretaire: user?.accountRole === 'secretaire',

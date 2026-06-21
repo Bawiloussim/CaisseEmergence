@@ -1,11 +1,22 @@
 const express = require('express');
-const { login, getMe, changePassword, updateProfile } = require('../controllers/authController');
+const {
+  login,
+  getMe,
+  changePassword,
+  updateProfile,
+  forgotPassword,
+  resetPassword,
+} = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Connexion : seul un email enregistré comme membre peut se connecter
 router.post('/login', login);
+
+// Mot de passe oublié : envoi d'un code par email, puis réinitialisation
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 // Profil de l'utilisateur connecté
 router.get('/me', protect, getMe);

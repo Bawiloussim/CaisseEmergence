@@ -94,6 +94,26 @@ const MemberList = ({ isSecretary }) => {
     }
   };
 
+  const handleResendInvitation = async (member) => {
+    if (!member.accountId) {
+      showToast("Ce membre n'a pas de compte de connexion associé.", 'error');
+      return;
+    }
+    if (!window.confirm(`Renvoyer un nouveau mot de passe temporaire à ${member.name} (${member.email}) ?`)) {
+      return;
+    }
+    try {
+      const result = await api.post(`/members/${member.accountId}/resend-invitation`, {});
+      if (result.warning) {
+        alert(result.warning);
+      } else {
+        showToast(`Invitation renvoyée par email à ${member.email}.`, 'success', 5000);
+      }
+    } catch (err) {
+      showToast(`Erreur : ${err.message}`, 'error', 6000);
+    }
+  };
+
   const handleRequestLoan = (member) => {
     setLoanMember(member);
     setShowLoanForm(true);
@@ -208,6 +228,7 @@ const MemberList = ({ isSecretary }) => {
             onDelete={handleDeleteMember}
             onEdit={(m) => { setEditMember(m); setShowForm(true); setSelectedMember(null); }}
             onRequestLoan={handleRequestLoan}
+            onResendInvitation={handleResendInvitation}
             isSecretary={isSecretary}
           />
         </Modal>

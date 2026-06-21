@@ -149,3 +149,54 @@ describe('DELETE /api/members/:id', () => {
     expect(res.status).toBe(200);
   });
 });
+
+describe('POST /api/members/:id/resend-invitation', () => {
+  it("génère un nouveau mot de passe sans recréer le compte ni perdre ses données", async () => {
+    const token = await createSecretaryToken();
+    const member = await Member.create({
+      name: 'Membre',
+      email: 'membre@example.com',
+      password: 'ancienMotDePasse',
+      accountRole: 'membre',
+      mustChangePassword: false,
+    });
+
+    const res = await request(app)
+      .post(`/api/members/${member._id}/resend-invitation`)
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+
+    // Le compte n'a jamais été supprimé : même _id.
+    const stillExists = await Member.findById(member._id);
+    expect(stillExists).not.toBeNull();
+    expect(stillExists.mustChangePassword).toBe(true);
+
+    // L'ancien mot de passe ne fonctionne plus (un nouveau a été généré).
+    const oldLogin = await request(app)
+      .post('/api/auth/login')
+      .send({ email: 'membre@example.com', password: 'ancienMotDePasse' });
+    expect(oldLogin.status).toBe(401);
+  });
+
+  it('refuse à un membre non secrétaire de renvoyer une invitation', async () => {
+    await createSecretaryToken();
+    const member = await Member.create({ name: 'Membre', email: 'membre@example.com', password: 'secret123' });
+    const memberToken = await loginAs('membre@example.com', 'secret123');
+
+    const res = await request(app)
+      .post(`/api/members/${member._id}/resend-invitation`)
+      .set('Authorization', `Bearer ${memberToken}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it('renvoie 404 pour un membre inexistant', async () => {
+    const token = await createSecretaryToken();
+    const res = await request(app)
+      .post('/api/members/000000000000000000000000/resend-invitation')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(404);
+  });
+});

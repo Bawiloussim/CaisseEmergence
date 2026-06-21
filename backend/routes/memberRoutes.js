@@ -5,6 +5,7 @@ const {
   createMember,
   updateMember,
   deleteMember,
+  resendInvitation,
 } = require('../controllers/memberController');
 const { protect, requireSecretary } = require('../middleware/auth');
 
@@ -19,6 +20,7 @@ router.get('/:id', getMemberById);
 
 // Écriture : secrétaire uniquement
 router.post('/', requireSecretary, createMember);
+router.post('/:id/resend-invitation', requireSecretary, resendInvitation);
 router.put('/:id', requireSecretary, updateMember);
 router.delete('/:id', requireSecretary, deleteMember);
 

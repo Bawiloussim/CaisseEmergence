@@ -102,6 +102,53 @@ const createMember = async (req, res) => {
   res.status(201).json({ member });
 };
 
+/**
+ * POST /api/members/:id/resend-invitation — secrétaire uniquement
+ * Génère un nouveau mot de passe temporaire et renvoie l'email
+ * d'invitation, sans recréer le compte (les cotisations, prêts et avis
+ * du membre restent intacts). Utile si l'envoi automatique a échoué à
+ * la création (configuration email manquante côté serveur) ou si le
+ * membre a perdu son mot de passe temporaire avant sa première connexion.
+ */
+const resendInvitation = async (req, res) => {
+  const member = await Member.findById(req.params.id);
+  if (!member) return res.status(404).json({ message: 'Membre non trouvé' });
+
+  const tempPassword = generateTempPassword();
+  member.password = tempPassword;
+  member.mustChangePassword = true;
+  await member.save();
+
+  await logAction({
+    action: 'update',
+    resourceLabel: `${member.name} (${member.email})`,
+    actor: req.user,
+    details: "Renvoi de l'invitation (nouveau mot de passe temporaire)",
+  });
+
+  try {
+    await sendEmail({
+      to: member.email,
+      subject: `Votre accès à l'espace membres — ${process.env.ASSOCIATION_NAME || 'La Caisse Emergence'}`,
+      html: invitationEmail({
+        name: member.name,
+        email: member.email,
+        tempPassword,
+        associationName: process.env.ASSOCIATION_NAME || 'La Caisse Emergence',
+        loginUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+      }),
+    });
+  } catch (err) {
+    return res.json({
+      warning:
+        `L'email n'a pas pu être envoyé (${err.message}). Vous pouvez communiquer ce mot ` +
+        `de passe temporaire manuellement : ${tempPassword}`,
+    });
+  }
+
+  res.json({ message: 'Invitation renvoyée par email' });
+};
+
 // PUT /api/members/:id — secrétaire uniquement
 const updateMember = async (req, res) => {
   const member = await Member.findById(req.params.id);
@@ -179,4 +226,4 @@ const deleteMember = async (req, res) => {
   res.json({ message: 'Membre supprimé' });
 };
 
-module.exports = { getMembers, getMemberById, createMember, updateMember, deleteMember };
+module.exports = { getMembers, getMemberById, createMember, updateMember, deleteMember, resendInvitation };

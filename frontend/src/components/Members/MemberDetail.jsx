@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Phone, MapPin, Calendar, IdCard, Cake, Smartphone, Trash2, Edit, QrCode } from 'lucide-react';
+import { Phone, MapPin, Calendar, IdCard, Cake, Smartphone, Trash2, Edit, QrCode, Send } from 'lucide-react';
 import Modal from '../UI/Modal';
 import MemberQRCard from './MemberQRCard';
 import ContributionController from '../../controllers/ContributionController';
@@ -7,7 +7,7 @@ import { MONTHS, MONTHS_FULL } from '../../models/ContributionModel';
 import PDFService from '../../services/PDFService';
 import StorageService from '../../services/StorageService';
 
-const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onRequestLoan }) => {
+const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onRequestLoan, onResendInvitation }) => {
   const [showQRCard, setShowQRCard] = useState(false);
   const [contributions, setContributions] = useState([]);
 
@@ -149,6 +149,15 @@ const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onReques
               >
                 <Edit size={16} /> Modifier
               </button>
+              {member.accountId && (
+                <button
+                  onClick={() => onResendInvitation(member)}
+                  className="flex items-center gap-2 px-4 py-2 text-navy border border-navy rounded-lg hover:bg-navy hover:text-white transition-all"
+                  title="Génère un nouveau mot de passe temporaire et renvoie l'email d'invitation"
+                >
+                  <Send size={16} /> Renvoyer l'invitation
+                </button>
+              )}
               <button
                 onClick={() => {
                   if (window.confirm('Êtes-vous sûr de vouloir supprimer ce membre ?')) {

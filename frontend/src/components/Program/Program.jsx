@@ -16,6 +16,8 @@ const STEPS = [
     title: 'Après la clôture du mois',
     text: "Réunion mensuelle obligatoire de tous les membres, en appel visioconférence (Zoom, Google Meet ou WhatsApp) : bilan des cotisations, suivi des prêts et de la solidarité, décisions collectives.",
     highlight: true,
+    link: GOOGLE_MEET_URL,
+    linkLabel: 'Rejoindre la réunion (Google Meet)',
   },
   {
     icon: HandCoins,
@@ -51,6 +53,16 @@ const Program = ({ isSecretary }) => {
               <div>
                 <p className="font-semibold text-navy">{step.title}</p>
                 <p className="text-sm text-gray-600 mt-0.5">{step.text}</p>
+                {step.link && (
+                  <a
+                    href={step.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mt-2 text-sm font-semibold text-navy hover:text-navy/80"
+                  >
+                    <Video size={14} /> {step.linkLabel}
+                  </a>
+                )}
               </div>
             </div>
           ))}
@@ -65,24 +77,14 @@ const Program = ({ isSecretary }) => {
             regrouper en appel visioconférence. Cette réunion n'est pas facultative — elle conditionne la
             transparence et les décisions collectives de la caisse.
           </p>
-          <div className="flex flex-wrap gap-4 mt-3">
-            <a
-              href={GOOGLE_MEET_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-navy hover:text-navy/80"
-            >
-              <Video size={16} /> Rejoindre la réunion (Google Meet)
-            </a>
-            <a
-              href={WHATSAPP_GROUP_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-sm font-semibold text-green-700 hover:text-green-800"
-            >
-              <MessageCircle size={16} /> Rejoindre le groupe WhatsApp de la caisse
-            </a>
-          </div>
+          <a
+            href={WHATSAPP_GROUP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 mt-3 text-sm font-semibold text-green-700 hover:text-green-800"
+          >
+            <MessageCircle size={16} /> Rejoindre le groupe WhatsApp de la caisse
+          </a>
         </div>
       </div>
 

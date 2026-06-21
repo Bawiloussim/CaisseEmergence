@@ -43,6 +43,10 @@ const memberSchema = new mongoose.Schema(
     monthlyContribution: { type: Number, default: 5000 },
     momoNumber: { type: String, default: '' },
     photo: { type: String, default: '' },
+
+    // Dernière activité connue (mise à jour par le chat) — sert à afficher
+    // qui est "en ligne" sans avoir besoin de connexions persistantes.
+    lastSeenAt: { type: Date, default: null },
   },
   { timestamps: true }
 );

@@ -7,6 +7,7 @@ const contributionRoutes = require('./routes/contributionRoutes');
 const loanRoutes = require('./routes/loanRoutes');
 const aidRoutes = require('./routes/aidRoutes');
 const meetingFeedbackRoutes = require('./routes/meetingFeedbackRoutes');
+const chatRoutes = require('./routes/chatRoutes');
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.use('/api/contributions', contributionRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/api/aids', aidRoutes);
 app.use('/api/meeting-feedback', meetingFeedbackRoutes);
+app.use('/api/chat', chatRoutes);
 
 // 404
 app.use((req, res) => {

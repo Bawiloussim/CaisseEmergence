@@ -11,6 +11,7 @@ import Solidarity from './components/Solidarity/Solidarity';
 import Statistics from './components/Statistics/Statistics';
 import Reports from './components/Reports/Reports';
 import Program from './components/Program/Program';
+import Chat from './components/Chat/Chat';
 import { ToastProvider, useToast } from './components/UI/Toast';
 import StorageService from './services/StorageService';
 import MemberController from './controllers/MemberController';
@@ -76,6 +77,8 @@ function AppContent() {
         return <Reports />;
       case 'program':
         return <Program isSecretary={isSecretary} />;
+      case 'chat':
+        return <Chat />;
       default:
         return <Dashboard isSecretary={isSecretary} onNavigateToProgram={() => setActiveTab('program')} />;
     }

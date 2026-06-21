@@ -8,6 +8,19 @@ const voteSchema = new mongoose.Schema(
   { _id: false }
 );
 
+// Une mensualité par mois de durée du prêt, générée automatiquement à
+// l'approbation. Le secrétaire coche chaque mensualité au fur et à mesure
+// des remboursements reçus.
+const repaymentSchema = new mongoose.Schema(
+  {
+    installmentNumber: { type: Number, required: true },
+    amount: { type: Number, required: true },
+    status: { type: String, enum: ['paid', 'pending'], default: 'pending' },
+    paymentDate: { type: String, default: null },
+  },
+  { _id: false }
+);
+
 const loanSchema = new mongoose.Schema(
   {
     memberId: { type: mongoose.Schema.Types.ObjectId, ref: 'Member', required: true },
@@ -21,6 +34,7 @@ const loanSchema = new mongoose.Schema(
     requestDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
     approvalDate: { type: String, default: null },
     votes: { type: [voteSchema], default: [] },
+    repayments: { type: [repaymentSchema], default: [] },
   },
   { timestamps: true }
 );

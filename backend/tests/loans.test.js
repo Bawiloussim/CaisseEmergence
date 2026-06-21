@@ -148,4 +148,118 @@ describe('POST /api/loans/:id/vote', () => {
 
     expect(voteRes.body.status).toBe('approved');
   });
+
+  it("génère les mensualités automatiquement lors de l'approbation par vote unanime", async () => {
+    const { borrower, secToken, voterToken } = await setup();
+    const loan = await request(app)
+      .post('/api/loans')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: borrower._id, amount: 10000 });
+
+    await request(app)
+      .post(`/api/loans/${loan.body._id}/vote`)
+      .set('Authorization', `Bearer ${voterToken}`)
+      .send({ vote: 'yes' });
+    const finalVote = await request(app)
+      .post(`/api/loans/${loan.body._id}/vote`)
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ vote: 'yes' });
+
+    expect(finalVote.body.status).toBe('approved');
+    expect(finalVote.body.repayments).toHaveLength(3);
+    const sum = finalVote.body.repayments.reduce((s, r) => s + r.amount, 0);
+    expect(sum).toBe(finalVote.body.total);
+  });
+});
+
+describe('PUT /api/loans/:id — approbation directe par le secrétaire', () => {
+  it('génère les mensualités (avec arrondi absorbé par la dernière) à l\'approbation', async () => {
+    const { borrower, secToken } = await setup();
+    const loan = await request(app)
+      .post('/api/loans')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: borrower._id, amount: 10000, duration: 3 });
+
+    const res = await request(app)
+      .put(`/api/loans/${loan.body._id}`)
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ status: 'approved' });
+
+    expect(res.status).toBe(200);
+    expect(res.body.repayments).toHaveLength(3);
+    expect(res.body.repayments[0].amount).toBe(3667);
+    expect(res.body.repayments[1].amount).toBe(3667);
+    expect(res.body.repayments[2].amount).toBe(3666); // absorbe l'arrondi
+    const sum = res.body.repayments.reduce((s, r) => s + r.amount, 0);
+    expect(sum).toBe(res.body.total);
+    expect(res.body.repayments.every((r) => r.status === 'pending')).toBe(true);
+  });
+});
+
+describe('PUT /api/loans/:id/repayments/:installmentNumber', () => {
+  async function createApprovedLoan(secToken, borrowerId) {
+    const loan = await request(app)
+      .post('/api/loans')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: borrowerId, amount: 10000, duration: 2 });
+    const approved = await request(app)
+      .put(`/api/loans/${loan.body._id}`)
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ status: 'approved' });
+    return approved.body;
+  }
+
+  it('le secrétaire peut marquer une mensualité comme payée', async () => {
+    const { borrower, secToken } = await setup();
+    const loan = await createApprovedLoan(secToken, borrower._id);
+
+    const res = await request(app)
+      .put(`/api/loans/${loan._id}/repayments/1`)
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ status: 'paid' });
+
+    expect(res.status).toBe(200);
+    const installment = res.body.repayments.find((r) => r.installmentNumber === 1);
+    expect(installment.status).toBe('paid');
+    expect(installment.paymentDate).not.toBeNull();
+    // L'autre mensualité reste inchangée.
+    const other = res.body.repayments.find((r) => r.installmentNumber === 2);
+    expect(other.status).toBe('pending');
+  });
+
+  it('refuse à un membre non secrétaire de marquer une mensualité', async () => {
+    const { borrower, secToken, borrowerToken } = await setup();
+    const loan = await createApprovedLoan(secToken, borrower._id);
+
+    const res = await request(app)
+      .put(`/api/loans/${loan._id}/repayments/1`)
+      .set('Authorization', `Bearer ${borrowerToken}`)
+      .send({ status: 'paid' });
+
+    expect(res.status).toBe(403);
+  });
+
+  it('refuse un statut invalide', async () => {
+    const { borrower, secToken } = await setup();
+    const loan = await createApprovedLoan(secToken, borrower._id);
+
+    const res = await request(app)
+      .put(`/api/loans/${loan._id}/repayments/1`)
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ status: 'approved' });
+
+    expect(res.status).toBe(400);
+  });
+
+  it('renvoie 404 pour une mensualité inexistante', async () => {
+    const { borrower, secToken } = await setup();
+    const loan = await createApprovedLoan(secToken, borrower._id);
+
+    const res = await request(app)
+      .put(`/api/loans/${loan._id}/repayments/99`)
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ status: 'paid' });
+
+    expect(res.status).toBe(404);
+  });
 });

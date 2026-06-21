@@ -52,6 +52,16 @@ class LoanController {
       return { success: false, message: err.message };
     }
   }
+
+  // Secrétaire uniquement : coche/décoche une mensualité de remboursement.
+  async setInstallmentStatus(loanId, installmentNumber, status) {
+    try {
+      const loan = await api.put(`/loans/${loanId}/repayments/${installmentNumber}`, { status });
+      return { success: true, loan: normalize(loan) };
+    } catch (err) {
+      return { success: false, message: err.message };
+    }
+  }
 }
 
 export default new LoanController();

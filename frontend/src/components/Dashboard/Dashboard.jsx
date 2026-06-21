@@ -6,6 +6,7 @@ import MemberController from '../../controllers/MemberController';
 import ContributionController from '../../controllers/ContributionController';
 import SolidarityController from '../../controllers/SolidarityController';
 import MeetingFeedbackController from '../../controllers/MeetingFeedbackController';
+import LoanController from '../../controllers/LoanController';
 import { useAuth } from '../Auth/AuthContext';
 import { CYCLE_MONTHS_FULL, getCurrentCycleMonth } from '../../utils/cycleMonth';
 import { Calendar, Video } from 'lucide-react';
@@ -23,15 +24,28 @@ const Dashboard = ({ onNavigateToProgram }) => {
   useEffect(() => {
     (async () => {
       const memberList = MemberController.getAllMembers();
-      const [contributions, solidarity, meetingFeedback] = await Promise.all([
+      const [contributions, solidarity, meetingFeedback, loans] = await Promise.all([
         ContributionController.getAllContributions(),
         SolidarityController.getSolidarityFund(),
         MeetingFeedbackController.getAll(),
+        LoanController.getAllLoans(),
       ]);
 
       const paidContributions = contributions.filter((c) => c.status === 'paid');
       const totalCaisse = paidContributions.reduce((sum, c) => sum + c.amount, 0);
       const pendingCount = contributions.filter((c) => c.status === 'pending' || c.status === 'late').length;
+
+      // Somme prêtée (capital uniquement) sur les prêts approuvés, et somme
+      // déjà remboursée (capital + intérêts) sur ces mêmes prêts : l'argent
+      // disponible remonte à chaque mensualité reçue, car les intérêts
+      // remboursés viennent grossir la caisse au-delà des cotisations.
+      const approvedLoans = loans.filter((l) => l.status === 'approved');
+      const totalLoans = approvedLoans.reduce((sum, l) => sum + l.amount, 0);
+      const totalRepaid = approvedLoans.reduce(
+        (sum, l) => sum + (l.repayments || []).filter((r) => r.status === 'paid').reduce((s, r) => s + r.amount, 0),
+        0
+      );
+      const availableAfterLoans = totalCaisse - totalLoans + totalRepaid;
 
       setMembers(memberList);
       setStats({
@@ -39,6 +53,8 @@ const Dashboard = ({ onNavigateToProgram }) => {
         solidarityFund: solidarity.total,
         memberCount: memberList.length,
         pendingPayments: pendingCount,
+        totalLoans,
+        availableAfterLoans,
       });
       setRecentContributions(
         [...contributions].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)).slice(0, 5)

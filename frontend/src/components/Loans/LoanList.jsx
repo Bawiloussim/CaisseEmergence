@@ -56,6 +56,16 @@ const LoanList = ({ isSecretary }) => {
     }
   };
 
+  const handleToggleInstallment = async (loan, installment) => {
+    const nextStatus = installment.status === 'paid' ? 'pending' : 'paid';
+    const res = await LoanController.setInstallmentStatus(loan.id, installment.installmentNumber, nextStatus);
+    if (res.success) {
+      await loadData();
+    } else {
+      alert(res.message || 'Erreur lors de la mise à jour de la mensualité');
+    }
+  };
+
   const handleDeleteLoan = async (loan) => {
     const member = members.find((m) => m.accountId === loan.memberId);
     if (!window.confirm(`Supprimer la demande de prêt de ${member?.name || 'ce membre'} (${loan.amount.toLocaleString('fr-FR')} FCFA) ?`)) {
@@ -177,6 +187,7 @@ const LoanList = ({ isSecretary }) => {
                   <th className="px-4 py-3 text-center">Durée</th>
                   <th className="px-4 py-3 text-left">Motif</th>
                   <th className="px-4 py-3 text-center">Statut</th>
+                  <th className="px-4 py-3 text-center">Remboursement</th>
                   <th className="px-4 py-3 text-center">Date</th>
                   <th className="px-4 py-3 text-center">Actions</th>
                 </tr>
@@ -195,6 +206,33 @@ const LoanList = ({ isSecretary }) => {
                     <td className="px-4 py-3 text-center">{loan.duration} mois</td>
                     <td className="px-4 py-3">{loan.motif || '—'}</td>
                     <td className="px-4 py-3 text-center">{getStatusBadge(loan.status)}</td>
+                    <td className="px-4 py-3 text-center">
+                      {loan.status === 'approved' && loan.repayments?.length > 0 ? (
+                        <div className="flex flex-col items-center gap-1">
+                          <span className="text-xs text-gray-500">
+                            {loan.repayments.filter((r) => r.status === 'paid').length}/{loan.repayments.length} mensualités
+                          </span>
+                          <div className="flex gap-1">
+                            {loan.repayments.map((r) => (
+                              <button
+                                key={r.installmentNumber}
+                                type="button"
+                                disabled={!isSecretary}
+                                onClick={() => isSecretary && handleToggleInstallment(loan, r)}
+                                title={`Mensualité ${r.installmentNumber} : ${r.amount.toLocaleString('fr-FR')} FCFA${r.status === 'paid' ? ` (payée le ${r.paymentDate})` : ' (en attente)'}`}
+                                className={`w-6 h-6 rounded-full text-[10px] font-bold flex items-center justify-center ${
+                                  r.status === 'paid' ? 'bg-green-500 text-white' : 'bg-gray-200 text-gray-500'
+                                } ${isSecretary ? 'cursor-pointer hover:opacity-80' : 'cursor-default'}`}
+                              >
+                                {r.installmentNumber}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-400">—</span>
+                      )}
+                    </td>
                     <td className="px-4 py-3 text-center">{loan.requestDate}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2 flex-wrap">
@@ -258,7 +296,7 @@ const LoanList = ({ isSecretary }) => {
               })}
               {loans.length === 0 && (
                 <tr>
-                  <td colSpan="11" className="px-4 py-8 text-center text-gray-400">
+                  <td colSpan="12" className="px-4 py-8 text-center text-gray-400">
                     Aucun prêt enregistré
                   </td>
                 </tr>

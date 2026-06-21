@@ -16,6 +16,19 @@ function computeDerivedFields(amount, duration) {
   return { interests, total, monthlyPayment };
 }
 
+// Une mensualité par mois de durée ; la dernière absorbe l'arrondi pour
+// que la somme des mensualités soit exactement égale au total dû.
+function generateRepayments(loan) {
+  const installments = [];
+  let remaining = loan.total;
+  for (let i = 1; i <= loan.duration; i++) {
+    const amount = i === loan.duration ? remaining : loan.monthlyPayment;
+    installments.push({ installmentNumber: i, amount, status: 'pending', paymentDate: null });
+    remaining -= amount;
+  }
+  return installments;
+}
+
 async function resourceLabel(memberId, amount) {
   const member = await Member.findById(memberId);
   return `${member?.name || 'Membre inconnu'} — ${amount} FCFA`;
@@ -83,6 +96,10 @@ const updateLoan = async (req, res) => {
   loan.total = total;
   loan.monthlyPayment = monthlyPayment;
 
+  if (loan.status === 'approved' && loan.repayments.length === 0) {
+    loan.repayments = generateRepayments(loan);
+  }
+
   await loan.save();
 
   await logAction({
@@ -144,6 +161,7 @@ const voteLoan = async (req, res) => {
   if (eligibleVoters > 0 && yes > eligibleVoters / 2) {
     loan.status = 'approved';
     loan.approvalDate = new Date().toISOString().split('T')[0];
+    if (loan.repayments.length === 0) loan.repayments = generateRepayments(loan);
   } else if (eligibleVoters > 0 && no > eligibleVoters / 2) {
     loan.status = 'rejected';
     loan.approvalDate = new Date().toISOString().split('T')[0];
@@ -161,4 +179,34 @@ const voteLoan = async (req, res) => {
   res.json(loan);
 };
 
-module.exports = { getLoans, createLoan, updateLoan, deleteLoan, voteLoan, computeLoanCeiling };
+// PUT /api/loans/:id/repayments/:installmentNumber — secrétaire uniquement
+const payInstallment = async (req, res) => {
+  const { status, paymentDate } = req.body;
+  if (!['paid', 'pending'].includes(status)) {
+    return res.status(400).json({ message: 'Statut invalide' });
+  }
+
+  const loan = await Loan.findById(req.params.id);
+  if (!loan) return res.status(404).json({ message: 'Prêt non trouvé' });
+
+  const installmentNumber = Number(req.params.installmentNumber);
+  const installment = loan.repayments.find((r) => r.installmentNumber === installmentNumber);
+  if (!installment) return res.status(404).json({ message: 'Mensualité non trouvée' });
+
+  installment.status = status;
+  installment.paymentDate = status === 'paid' ? paymentDate || new Date().toISOString().split('T')[0] : null;
+
+  await loan.save();
+
+  await logAction({
+    action: 'update',
+    resource: 'loan',
+    resourceLabel: await resourceLabel(loan.memberId, loan.amount),
+    actor: req.user,
+    details: `Mensualité ${installmentNumber} marquée "${status === 'paid' ? 'payée' : 'en attente'}"`,
+  });
+
+  res.json(loan);
+};
+
+module.exports = { getLoans, createLoan, updateLoan, deleteLoan, voteLoan, payInstallment, computeLoanCeiling };

@@ -1,5 +1,5 @@
 // React import removed (not needed with new JSX transform)
-import { Wallet, HandHeart, Users, Clock } from 'lucide-react';
+import { Wallet, HandHeart, Users, Clock, HandCoins, PiggyBank } from 'lucide-react';
 
 const KPICards = ({ stats }) => {
   const cards = [
@@ -16,6 +16,20 @@ const KPICards = ({ stats }) => {
       icon: HandHeart,
       color: 'green',
       subtext: 'Disponibles',
+    },
+    {
+      title: 'Total des prêts',
+      value: `${stats.totalLoans.toLocaleString('fr-FR')} FCFA`,
+      icon: HandCoins,
+      color: 'gold',
+      subtext: 'Capital prêté (approuvé)',
+    },
+    {
+      title: 'Disponible après prêts',
+      value: `${stats.availableAfterLoans.toLocaleString('fr-FR')} FCFA`,
+      icon: PiggyBank,
+      color: 'teal',
+      subtext: 'Caisse - prêts + remboursements',
     },
     {
       title: 'Membres actifs',
@@ -38,6 +52,8 @@ const KPICards = ({ stats }) => {
     green: 'border-green-500',
     navy: 'border-navy',
     red: 'border-red-500',
+    gold: 'border-gold',
+    teal: 'border-teal-500',
   };
 
   const iconColor = {
@@ -45,6 +61,8 @@ const KPICards = ({ stats }) => {
     green: 'text-green-600',
     navy: 'text-navy',
     red: 'text-red-600',
+    gold: 'text-gold',
+    teal: 'text-teal-600',
   };
 
   return (

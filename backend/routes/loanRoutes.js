@@ -5,6 +5,7 @@ const {
   updateLoan,
   deleteLoan,
   voteLoan,
+  payInstallment,
 } = require('../controllers/loanController');
 const { protect, requireSecretary } = require('../middleware/auth');
 
@@ -20,5 +21,6 @@ router.put('/:id', requireSecretary, updateLoan);
 router.delete('/:id', requireSecretary, deleteLoan);
 // Le vote reste ouvert à tout membre connecté (pas réservé au secrétaire).
 router.post('/:id/vote', voteLoan);
+router.put('/:id/repayments/:installmentNumber', requireSecretary, payInstallment);
 
 module.exports = router;

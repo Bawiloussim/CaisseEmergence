@@ -1,43 +1,34 @@
-const nodemailer = require('nodemailer');
-
-let transporter;
-
-function getTransporter() {
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST,
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: Number(process.env.SMTP_PORT) === 465,
-      requireTLS: true,
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASS,
-      },
-      tls: {
-        rejectUnauthorized: false,
-      },
-    });
-  }
-  return transporter;
-}
+const RESEND_API_URL = 'https://api.resend.com/emails';
 
 /**
- * Envoie un email.
+ * Envoie un email via l'API HTTP de Resend (port 443, jamais bloqué
+ * par les hébergeurs cloud — contrairement au SMTP qui timeout
+ * souvent vers Gmail depuis Render).
  * @param {{ to: string, subject: string, html: string }} options
  */
 async function sendEmail({ to, subject, html }) {
-  if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    throw new Error(
-      "Configuration SMTP manquante : renseignez SMTP_HOST, SMTP_USER et SMTP_PASS dans le fichier .env"
-    );
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error('Configuration email manquante : renseignez RESEND_API_KEY dans le fichier .env');
   }
 
-  await getTransporter().sendMail({
-    from: process.env.EMAIL_FROM || process.env.SMTP_USER,
-    to,
-    subject,
-    html,
+  const response = await fetch(RESEND_API_URL, {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: process.env.EMAIL_FROM || 'La Caisse Emergence <onboarding@resend.dev>',
+      to,
+      subject,
+      html,
+    }),
   });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message || `Échec de l'envoi de l'email (HTTP ${response.status})`);
+  }
 }
 
 module.exports = sendEmail;

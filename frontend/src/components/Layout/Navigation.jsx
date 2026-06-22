@@ -1,7 +1,7 @@
 // React import removed (not needed with new JSX transform)
 import { LayoutDashboard, Users, CreditCard, HandCoins, Heart, FileText, BarChart3, ScrollText, MessageCircle } from 'lucide-react';
 
-const Navigation = ({ activeTab, onTabChange }) => {
+const Navigation = ({ activeTab, onTabChange, unreadChatCount = 0 }) => {
   const navItems = [
     { id: 'dashboard', label: 'Tableau de bord', icon: LayoutDashboard },
     { id: 'members', label: 'Membres', icon: Users },
@@ -29,7 +29,14 @@ const Navigation = ({ activeTab, onTabChange }) => {
                   : 'text-white/60 hover:text-white hover:bg-white/5'}
               `}
             >
-              <item.icon size={18} />
+              <span className="relative">
+                <item.icon size={18} />
+                {item.id === 'chat' && unreadChatCount > 0 && (
+                  <span className="absolute -top-1.5 -right-2 flex items-center justify-center min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold">
+                    {unreadChatCount > 9 ? '9+' : unreadChatCount}
+                  </span>
+                )}
+              </span>
               <span className="hidden sm:inline">{item.label}</span>
             </button>
           ))}

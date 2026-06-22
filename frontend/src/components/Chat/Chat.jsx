@@ -1,51 +1,39 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Send, Circle } from 'lucide-react';
 import { useAuth } from '../Auth/AuthContext';
+import { useChat } from './ChatContext';
 import ChatController from '../../controllers/ChatController';
 
-const POLL_INTERVAL_MS = 5000;
+const POLL_ONLINE_INTERVAL_MS = 5000;
 const HEARTBEAT_INTERVAL_MS = 20000;
 
 const Chat = () => {
   const { user } = useAuth();
-  const [messages, setMessages] = useState([]);
+  const { messages, loaded, setChatOpen, appendMessage } = useChat();
   const [onlineMembers, setOnlineMembers] = useState([]);
   const [text, setText] = useState('');
   const [sending, setSending] = useState(false);
-  const [loading, setLoading] = useState(true);
   const messagesEndRef = useRef(null);
 
-  const loadMessages = useCallback(async () => {
-    try {
-      const data = await ChatController.getMessages();
-      setMessages(data);
-    } catch (err) {
-      console.error('Erreur chargement messages', err);
-    }
-  }, []);
-
-  const loadOnlineMembers = useCallback(async () => {
-    try {
-      const data = await ChatController.getOnlineMembers();
-      setOnlineMembers(data);
-    } catch (err) {
-      console.error('Erreur chargement membres en ligne', err);
-    }
-  }, []);
+  useEffect(() => {
+    setChatOpen(true);
+    return () => setChatOpen(false);
+  }, [setChatOpen]);
 
   useEffect(() => {
-    (async () => {
-      await Promise.all([loadMessages(), loadOnlineMembers()]);
-      setLoading(false);
-    })();
+    const loadOnlineMembers = async () => {
+      try {
+        const data = await ChatController.getOnlineMembers();
+        setOnlineMembers(data);
+      } catch (err) {
+        console.error('Erreur chargement membres en ligne', err);
+      }
+    };
 
+    loadOnlineMembers();
     ChatController.heartbeat().catch(() => {});
 
-    const pollInterval = setInterval(() => {
-      loadMessages();
-      loadOnlineMembers();
-    }, POLL_INTERVAL_MS);
-
+    const pollInterval = setInterval(loadOnlineMembers, POLL_ONLINE_INTERVAL_MS);
     const heartbeatInterval = setInterval(() => {
       ChatController.heartbeat().catch(() => {});
     }, HEARTBEAT_INTERVAL_MS);
@@ -54,7 +42,7 @@ const Chat = () => {
       clearInterval(pollInterval);
       clearInterval(heartbeatInterval);
     };
-  }, [loadMessages, loadOnlineMembers]);
+  }, []);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -68,9 +56,10 @@ const Chat = () => {
     setSending(true);
     try {
       const message = await ChatController.sendMessage(trimmed);
-      setMessages((prev) => [...prev, message]);
+      appendMessage(message);
       setText('');
-      loadOnlineMembers();
+      const data = await ChatController.getOnlineMembers();
+      setOnlineMembers(data);
     } catch (err) {
       alert(`Erreur lors de l'envoi : ${err.message}`);
     } finally {
@@ -78,7 +67,7 @@ const Chat = () => {
     }
   };
 
-  if (loading) {
+  if (!loaded) {
     return <div className="text-center py-12 text-gray-400">Chargement du chat…</div>;
   }
 

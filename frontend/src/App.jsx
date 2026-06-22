@@ -12,6 +12,7 @@ import Statistics from './components/Statistics/Statistics';
 import Reports from './components/Reports/Reports';
 import Program from './components/Program/Program';
 import Chat from './components/Chat/Chat';
+import { ChatProvider, useChat } from './components/Chat/ChatContext';
 import { ToastProvider, useToast } from './components/UI/Toast';
 import StorageService from './services/StorageService';
 import MemberController from './controllers/MemberController';
@@ -24,6 +25,7 @@ function AppContent() {
   const isSecretary = isSecretaire;
   const [settings, setSettings] = useState(() => StorageService.getSettings());
   const { showToast } = useToast();
+  const { unreadCount: unreadChatCount } = useChat();
 
   // Synchronise la liste des membres puis migre une fois pour toutes les
   // cotisations/prêts/aides qui ne vivaient jusqu'ici que dans le
@@ -93,7 +95,7 @@ function AppContent() {
         settings={settings}
         onUpdateSettings={updateSettings}
       />
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} />
+      <Navigation activeTab={activeTab} onTabChange={setActiveTab} unreadChatCount={unreadChatCount} />
       <main className="container-wide px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
         {renderContent()}
       </main>
@@ -105,7 +107,9 @@ function AppContent() {
 function App() {
   return (
     <ToastProvider>
-      <AppContent />
+      <ChatProvider>
+        <AppContent />
+      </ChatProvider>
     </ToastProvider>
   );
 }

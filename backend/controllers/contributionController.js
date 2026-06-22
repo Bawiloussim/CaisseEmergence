@@ -13,9 +13,21 @@ const getContributions = async (req, res) => {
   res.json(contributions);
 };
 
-// POST /api/contributions — secrétaire uniquement
+// POST /api/contributions — le secrétaire peut enregistrer un paiement pour
+// n'importe quel membre avec le statut de son choix ; un membre ne peut
+// importer une preuve de paiement (capture d'écran) que pour lui-même, et
+// celle-ci reste "en attente" jusqu'à validation par le secrétaire.
 const createContribution = async (req, res) => {
-  const { memberId, month, amount, fees, status, paymentDate, paymentMethod, reference } = req.body;
+  const { month, amount, fees, paymentDate, paymentMethod, reference, proofImage } = req.body;
+  let { memberId, status } = req.body;
+
+  if (req.user.accountRole !== 'secretaire') {
+    memberId = String(req.user._id);
+    status = 'pending';
+    if (!proofImage) {
+      return res.status(400).json({ message: 'Capture d\'écran du paiement requise' });
+    }
+  }
 
   if (!memberId || !month) {
     return res.status(400).json({ message: 'Membre et mois requis' });
@@ -26,6 +38,26 @@ const createContribution = async (req, res) => {
 
   const existing = await Contribution.findOne({ memberId, month });
   if (existing) {
+    // Un membre peut renvoyer une preuve corrigée tant que son paiement
+    // précédent n'a pas déjà été validé par le secrétaire.
+    if (req.user.accountRole !== 'secretaire' && existing.status !== 'paid') {
+      existing.amount = amount;
+      if (fees !== undefined) existing.fees = fees;
+      existing.proofImage = proofImage;
+      if (reference !== undefined) existing.reference = reference;
+      if (paymentDate !== undefined) existing.paymentDate = paymentDate;
+      await existing.save();
+
+      await logAction({
+        action: 'update',
+        resource: 'contribution',
+        resourceLabel: await resourceLabel(memberId, month),
+        actor: req.user,
+        details: 'Preuve de paiement renvoyée par le membre',
+      });
+
+      return res.json(existing);
+    }
     return res.status(409).json({ message: 'Cotisation déjà enregistrée pour ce mois' });
   }
 
@@ -38,6 +70,7 @@ const createContribution = async (req, res) => {
     paymentDate,
     paymentMethod,
     reference,
+    proofImage,
   });
 
   await logAction({
@@ -45,6 +78,7 @@ const createContribution = async (req, res) => {
     resource: 'contribution',
     resourceLabel: await resourceLabel(memberId, month),
     actor: req.user,
+    details: proofImage ? 'Preuve de paiement importée par le membre' : '',
   });
 
   res.status(201).json(contribution);
@@ -55,7 +89,7 @@ const updateContribution = async (req, res) => {
   const contribution = await Contribution.findById(req.params.id);
   if (!contribution) return res.status(404).json({ message: 'Cotisation non trouvée' });
 
-  const editableFields = ['memberId', 'month', 'amount', 'fees', 'status', 'paymentDate', 'paymentMethod', 'reference'];
+  const editableFields = ['memberId', 'month', 'amount', 'fees', 'status', 'paymentDate', 'paymentMethod', 'reference', 'proofImage'];
   editableFields.forEach((field) => {
     if (req.body[field] !== undefined) contribution[field] = req.body[field];
   });

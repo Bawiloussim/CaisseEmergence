@@ -10,6 +10,9 @@ const contributionSchema = new mongoose.Schema(
     paymentDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
     paymentMethod: { type: String, default: 'Mobile Money' },
     reference: { type: String, default: '' },
+    // Capture d'écran du paiement (dataURL), fournie par le membre lui-même
+    // en attendant la validation du secrétaire.
+    proofImage: { type: String, default: '' },
   },
   { timestamps: true }
 );

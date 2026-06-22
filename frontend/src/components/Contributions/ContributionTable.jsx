@@ -1,7 +1,15 @@
 // React import removed (not needed with new JSX transform)
-import { CheckCircle, Clock, XCircle } from 'lucide-react';
+import { CheckCircle, Clock, XCircle, Image as ImageIcon } from 'lucide-react';
 
-const ContributionTable = ({ contributions, members, isSecretary = false, onEditContribution, onDeleteContribution }) => {
+const ContributionTable = ({
+  contributions,
+  members,
+  isSecretary = false,
+  currentMemberId,
+  onEditContribution,
+  onDeleteContribution,
+  onViewProof,
+}) => {
   const MONTHS = ['JUIN', 'JUILLET', 'AOÛT', 'SEPTEMBRE', 'OCTOBRE', 'NOVEMBRE'];
   const MONTH_LABELS = ['Juin', 'Juil', 'Août', 'Sept', 'Oct', 'Nov'];
 
@@ -72,6 +80,15 @@ const ContributionTable = ({ contributions, members, isSecretary = false, onEdit
                         <div>
                           {contrib ? getStatusDisplay(contrib.status) : '—'}
                         </div>
+                        {contrib?.proofImage && (isSecretary || contrib.memberId === currentMemberId) && (
+                          <button
+                            onClick={() => onViewProof && onViewProof(contrib)}
+                            title="Voir la preuve de paiement"
+                            className="text-xs text-navy/80 hover:underline inline-flex items-center gap-1"
+                          >
+                            <ImageIcon size={12} /> Preuve
+                          </button>
+                        )}
                         {isSecretary && contrib && (
                           <div className="flex items-center gap-2 mt-1">
                             <button

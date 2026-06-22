@@ -16,8 +16,11 @@ import { ChatProvider, useChat } from './components/Chat/ChatContext';
 import { ToastProvider, useToast } from './components/UI/Toast';
 import StorageService from './services/StorageService';
 import MemberController from './controllers/MemberController';
+import ContributionController from './controllers/ContributionController';
 import MigrationService from './services/MigrationService';
 import api from './services/apiClient';
+
+const PENDING_PROOF_POLL_MS = 30000;
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -26,6 +29,26 @@ function AppContent() {
   const [settings, setSettings] = useState(() => StorageService.getSettings());
   const { showToast } = useToast();
   const { unreadCount: unreadChatCount } = useChat();
+  const [pendingProofCount, setPendingProofCount] = useState(0);
+
+  // Compte les cotisations avec preuve importée par un membre et toujours
+  // "en attente" de validation, pour afficher un badge au secrétaire.
+  useEffect(() => {
+    if (!user || !isSecretary) return;
+
+    const loadPendingProofCount = async () => {
+      try {
+        const contributions = await ContributionController.getAllContributions();
+        setPendingProofCount(contributions.filter((c) => c.status === 'pending' && c.proofImage).length);
+      } catch (err) {
+        console.error('Échec du comptage des preuves de paiement en attente', err);
+      }
+    };
+
+    loadPendingProofCount();
+    const interval = setInterval(loadPendingProofCount, PENDING_PROOF_POLL_MS);
+    return () => clearInterval(interval);
+  }, [user, isSecretary]);
 
   // Synchronise la liste des membres puis migre une fois pour toutes les
   // cotisations/prêts/aides qui ne vivaient jusqu'ici que dans le
@@ -95,7 +118,12 @@ function AppContent() {
         settings={settings}
         onUpdateSettings={updateSettings}
       />
-      <Navigation activeTab={activeTab} onTabChange={setActiveTab} unreadChatCount={unreadChatCount} />
+      <Navigation
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        unreadChatCount={unreadChatCount}
+        pendingContributionCount={pendingProofCount}
+      />
       <main className="container-wide px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
         {renderContent()}
       </main>

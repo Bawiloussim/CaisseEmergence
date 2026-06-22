@@ -152,7 +152,7 @@ class PDFService {
       body: members.map((m, i) => [
         i + 1, m.name, m.role, m.phone || '—', m.cni || '—',
         m.joinDate ? new Date(m.joinDate).toLocaleDateString('fr-FR') : '—',
-        this.formatCurrency((m.monthlyContribution || 5000) + 300)
+        this.formatCurrency((m.monthlyContribution || 2000) + 300)
       ]),
       styles: { fontSize: 9, cellPadding: 3 },
       headStyles: { fillColor: [13, 35, 64], textColor: [255, 255, 255] },

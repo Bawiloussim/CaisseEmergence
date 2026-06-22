@@ -9,7 +9,7 @@ const STEPS = [
   {
     icon: Wallet,
     title: 'Du 1er au 5 du mois',
-    text: `Chaque membre verse sa cotisation mensuelle (minimum 5 000 FCFA + 300 FCFA de frais de gestion) par Flooz au numéro ${FLOOZ_NUMBER}.`,
+    text: `Chaque membre verse sa cotisation mensuelle (minimum 2 000 FCFA + 300 FCFA de frais de gestion) par Flooz au numéro ${FLOOZ_NUMBER}.`,
   },
   {
     icon: Video,
@@ -96,7 +96,7 @@ const Program = ({ isSecretary }) => {
           <div className="space-y-3">
             <h4 className="font-bold text-gold flex items-center gap-2"><Wallet size={16} /> Cotisations</h4>
             <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-              <li>Minimum 5 000 FCFA/mois</li>
+              <li>Minimum 2 000 FCFA/mois</li>
               <li>Frais de gestion 300 FCFA/mois</li>
               <li>Date limite : le 5 du mois</li>
               <li>Janvier à novembre</li>
@@ -124,7 +124,7 @@ const Program = ({ isSecretary }) => {
           <div className="space-y-3">
             <h4 className="font-bold text-gold flex items-center gap-2"><HandHeart size={16} /> Fonds solidarité</h4>
             <ul className="list-disc list-inside text-sm text-gray-600 space-y-1">
-              <li>Frais adhésion : 2 000 FCFA</li>
+              <li>Frais adhésion : 1 000 FCFA</li>
               <li>Frais gestion mensuels</li>
               <li>Pénalités de retard</li>
               <li>Vote unanime pour aide</li>

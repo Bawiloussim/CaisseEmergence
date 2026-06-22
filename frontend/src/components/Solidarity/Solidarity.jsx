@@ -112,7 +112,7 @@ const Solidarity = ({ isSecretary }) => {
               <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">📋</div>
               <div>
                 <p className="font-medium">Frais d'adhésion</p>
-                <p className="text-sm text-gray-500">2 000 FCFA par nouveau membre (dès 2027)</p>
+                <p className="text-sm text-gray-500">1 000 FCFA par nouveau membre (dès 2027)</p>
               </div>
             </div>
             <span className="font-semibold">{solidarityData?.adhesion?.toLocaleString('fr-FR') || 0} FCFA</span>

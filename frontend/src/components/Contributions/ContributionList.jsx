@@ -132,7 +132,7 @@ const ContributionList = ({ isSecretary }) => {
           {currentMember && (
             <button
               onClick={() => setShowProofForm(true)}
-              className="btn-outline flex items-center gap-2"
+              className="flex items-center gap-2 bg-white text-navy border border-navy/15 shadow-sm px-3 py-2 rounded-lg font-medium hover:bg-gray-50 transition-colors"
             >
               <Upload size={18} /> Importer ma preuve de paiement
             </button>

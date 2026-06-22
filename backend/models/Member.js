@@ -40,7 +40,7 @@ const memberSchema = new mongoose.Schema(
       default: () => new Date().toISOString().split('T')[0],
     },
     address: { type: String, default: '' },
-    monthlyContribution: { type: Number, default: 2000 },
+    monthlyContribution: { type: Number, default: 5000 },
     momoNumber: { type: String, default: '' },
     photo: { type: String, default: '' },
 

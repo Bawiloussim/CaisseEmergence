@@ -8,7 +8,7 @@ export class MemberModel {
     this.dob = data.dob || '';
     this.joinDate = data.joinDate || new Date().toISOString().split('T')[0];
     this.address = data.address || '';
-    this.monthlyContribution = Number(data.monthlyContribution) || 2000;
+    this.monthlyContribution = Number(data.monthlyContribution) || 5000;
     this.momoNumber = data.momoNumber || '';
     this.photo = data.photo || '';
     this.createdAt = data.createdAt || new Date().toISOString();
@@ -22,7 +22,7 @@ export class MemberModel {
   validate() {
     const errors = [];
     if (!this.name) errors.push('Le nom est requis');
-    if (this.monthlyContribution < 2000) errors.push('La cotisation minimale est de 2000 FCFA');
+    if (this.monthlyContribution < 5000) errors.push('La cotisation minimale est de 5000 FCFA');
     return errors;
   }
 

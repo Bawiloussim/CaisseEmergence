@@ -3,7 +3,7 @@ export class ContributionModel {
     this.id = data.id || Date.now();
     this.memberId = data.memberId;
     this.month = data.month;
-    this.amount = Number(data.amount) || 2000;
+    this.amount = Number(data.amount) || 5000;
     this.fees = Number(data.fees) || 300;
     this.status = data.status || 'pending';
     this.paymentDate = data.paymentDate || new Date().toISOString().split('T')[0];

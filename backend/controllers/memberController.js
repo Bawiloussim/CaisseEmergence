@@ -65,7 +65,7 @@ const createMember = async (req, res) => {
     photo,
     role: role || 'Membre actif',
     accountRole: accountRole === 'secretaire' ? 'secretaire' : 'membre',
-    monthlyContribution: monthlyContribution || 2000,
+    monthlyContribution: monthlyContribution || 5000,
     joinDate,
     mustChangePassword: true,
   });

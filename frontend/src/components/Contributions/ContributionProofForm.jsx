@@ -17,7 +17,7 @@ const ContributionProofForm = ({ onClose, onSubmit, member, existingMonths = [] 
   const months = Object.keys(MONTHS_FULL);
   const [formData, setFormData] = useState({
     month: months.find((m) => !existingMonths.includes(m)) || months[0],
-    amount: member?.monthlyContribution || 2000,
+    amount: member?.monthlyContribution || 5000,
     reference: '',
     paymentDate: new Date().toISOString().split('T')[0],
   });

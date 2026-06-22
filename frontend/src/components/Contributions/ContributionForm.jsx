@@ -5,7 +5,7 @@ const ContributionForm = ({ onClose, onSubmit, members, initialData }) => {
   const [formData, setFormData] = useState(() => ({
     memberId: '',
     month: 'JUIN',
-    amount: 2000,
+    amount: 5000,
     fees: 300,
     status: 'paid',
     paymentDate: new Date().toISOString().split('T')[0],

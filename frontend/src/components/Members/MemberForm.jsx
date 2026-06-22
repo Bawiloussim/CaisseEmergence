@@ -12,7 +12,7 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
     dob: editingMember?.dob || '',
     joinDate: editingMember?.joinDate || new Date().toISOString().split('T')[0],
     address: editingMember?.address || '',
-    monthlyContribution: editingMember?.monthlyContribution || 2000,
+    monthlyContribution: editingMember?.monthlyContribution || 5000,
     momoNumber: editingMember?.momoNumber || '',
     photo: editingMember?.photo || '',
     email: editingMember?.email || '',
@@ -57,8 +57,8 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
   const validate = () => {
     const newErrors = {};
     if (!formData.name.trim()) newErrors.name = 'Le nom est requis';
-    if (formData.monthlyContribution < 2000) {
-      newErrors.monthlyContribution = 'La cotisation minimale est de 2000 FCFA';
+    if (formData.monthlyContribution < 5000) {
+      newErrors.monthlyContribution = 'La cotisation minimale est de 5000 FCFA';
     }
     if (!formData.email.trim()) {
       newErrors.email = "L'email est requis pour créer l'accès du membre";
@@ -251,7 +251,7 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
               value={formData.monthlyContribution}
               onChange={handleChange}
               className={`input ${errors.monthlyContribution ? 'border-red-500' : ''}`}
-              min="2000"
+              min="5000"
               step="1"
             />
             {errors.monthlyContribution && <p className="text-xs text-red-500 mt-1">{errors.monthlyContribution}</p>}

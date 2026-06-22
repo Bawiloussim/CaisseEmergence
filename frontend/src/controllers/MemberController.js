@@ -73,7 +73,7 @@ class MemberController {
         phone: apiMember.phone || '',
         role: apiMember.role || 'Membre actif',
         accountRole: apiMember.accountRole || 'membre',
-        monthlyContribution: apiMember.monthlyContribution || 2000,
+        monthlyContribution: apiMember.monthlyContribution || 5000,
         joinDate: apiMember.joinDate || '',
         cni: apiMember.cni || '',
         dob: apiMember.dob || '',

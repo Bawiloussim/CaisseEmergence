@@ -69,7 +69,7 @@ Render déploie depuis un dépôt Git.
    | `JWT_EXPIRES_IN` | `7d` |
    | `FRONTEND_URL` | `https://caisse-emergence.vercel.app` |
    | `ASSOCIATION_NAME` | `La Caisse Emergence` |
-   | `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `EMAIL_FROM` | vos identifiants email (voir `.env.example`) |
+   | `BREVO_API_KEY`, `EMAIL_FROM` | vos identifiants email (voir `.env.example`) |
    | `SECRETARY_NAME`, `SECRETARY_EMAIL`, `SECRETARY_PASSWORD` | identifiants du compte secrétaire |
 
    Générer un `JWT_SECRET` :

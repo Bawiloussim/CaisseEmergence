@@ -1,43 +1,46 @@
-const nodemailer = require('nodemailer');
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email';
 
 function parseEmailFrom(emailFrom) {
   const match = emailFrom.match(/^(.*)<(.+)>$/);
   if (match) {
-    return { name: match[1].trim().replace(/^"|"$/g, ''), address: match[2].trim() };
+    return { name: match[1].trim().replace(/^"|"$/g, ''), email: match[2].trim() };
   }
-  return { name: undefined, address: emailFrom.trim() };
-}
-
-let transporter;
-function getTransporter() {
-  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
-    throw new Error(
-      'Configuration email manquante : renseignez SMTP_USER et SMTP_PASS dans le fichier .env'
-    );
-  }
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp-relay.brevo.com',
-      port: Number(process.env.SMTP_PORT) || 587,
-      secure: process.env.SMTP_SECURE === 'true', // true pour le port 465, false (STARTTLS) pour 587
-      auth: {
-        user: process.env.SMTP_USER,
-        pass: (process.env.SMTP_PASS || '').replace(/\s+/g, ''),
-      },
-    });
-  }
-  return transporter;
+  return { name: undefined, email: emailFrom.trim() };
 }
 
 /**
- * Envoie un email via un relais SMTP (Brevo, Gmail, etc.) configuré
- * par les variables SMTP_HOST/SMTP_PORT/SMTP_SECURE/SMTP_USER/SMTP_PASS.
+ * Envoie un email via l'API HTTP de Brevo (port 443, jamais bloqué
+ * par les hébergeurs cloud — contrairement au SMTP qui timeout
+ * souvent vers Gmail depuis Render). L'adresse EMAIL_FROM doit être
+ * un expéditeur vérifié dans Brevo (Senders, Domains & Dedicated IPs).
  * @param {{ to: string, subject: string, html: string }} options
  */
 async function sendEmail({ to, subject, html }) {
-  const from = parseEmailFrom(process.env.EMAIL_FROM || 'La Caisse Emergence <no-reply@example.com>');
+  if (!process.env.BREVO_API_KEY) {
+    throw new Error('Configuration email manquante : renseignez BREVO_API_KEY dans le fichier .env');
+  }
 
-  await getTransporter().sendMail({ from, to, subject, html });
+  const sender = parseEmailFrom(process.env.EMAIL_FROM || 'La Caisse Emergence <no-reply@example.com>');
+
+  const response = await fetch(BREVO_API_URL, {
+    method: 'POST',
+    headers: {
+      'api-key': process.env.BREVO_API_KEY,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      sender,
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
+  });
+
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.message || `Échec de l'envoi de l'email (HTTP ${response.status})`);
+  }
 }
 
 module.exports = sendEmail;

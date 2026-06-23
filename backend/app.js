@@ -12,7 +12,9 @@ const chatRoutes = require('./routes/chatRoutes');
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+// 8 Mo : couvre les preuves de paiement (captures d'écran, max 5 Mo côté
+// frontend) une fois encodées en base64 (+33 % environ) avec une marge.
+app.use(express.json({ limit: '8mb' }));
 
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
 

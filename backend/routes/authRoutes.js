@@ -8,15 +8,16 @@ const {
   resetPassword,
 } = require('../controllers/authController');
 const { protect } = require('../middleware/auth');
+const { loginLimiter, passwordResetLimiter } = require('../middleware/rateLimiter');
 
 const router = express.Router();
 
 // Connexion : seul un email enregistré comme membre peut se connecter
-router.post('/login', login);
+router.post('/login', loginLimiter, login);
 
 // Mot de passe oublié : envoi d'un code par email, puis réinitialisation
-router.post('/forgot-password', forgotPassword);
-router.post('/reset-password', resetPassword);
+router.post('/forgot-password', passwordResetLimiter, forgotPassword);
+router.post('/reset-password', passwordResetLimiter, resetPassword);
 
 // Profil de l'utilisateur connecté
 router.get('/me', protect, getMe);

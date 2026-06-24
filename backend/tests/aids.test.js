@@ -22,10 +22,14 @@ async function loginAs(email, password) {
 
 async function setup() {
   await Member.create({ name: 'Secrétaire', email: 'sec@example.com', password: 'secret123', accountRole: 'secretaire' });
+  await Member.create({ name: 'Trésorier', email: 'tres@example.com', password: 'secret123', accountRole: 'tresorier' });
+  await Member.create({ name: 'Président', email: 'pres@example.com', password: 'secret123', accountRole: 'president' });
   const beneficiary = await Member.create({ name: 'Bénéficiaire', email: 'benef@example.com', password: 'secret123', accountRole: 'membre' });
   const secToken = await loginAs('sec@example.com', 'secret123');
+  const tresToken = await loginAs('tres@example.com', 'secret123');
+  const presToken = await loginAs('pres@example.com', 'secret123');
   const memberToken = await loginAs('benef@example.com', 'secret123');
-  return { beneficiary, secToken, memberToken };
+  return { beneficiary, secToken, tresToken, presToken, memberToken };
 }
 
 describe('POST /api/aids', () => {
@@ -40,13 +44,20 @@ describe('POST /api/aids', () => {
   });
 
   it('crée une aide quand le fonds est suffisant, visible par un autre membre', async () => {
-    const { beneficiary, secToken, memberToken } = await setup();
+    const { beneficiary, secToken, tresToken, presToken, memberToken } = await setup();
 
-    // crédite le fonds via une cotisation payée (300 FCFA de frais)
-    await request(app)
+    // crédite le fonds via une cotisation payée (300 FCFA de frais), validée
+    // par les trois rôles requis (secrétaire, trésorier, président).
+    const contribution = await request(app)
       .post('/api/contributions')
       .set('Authorization', `Bearer ${secToken}`)
       .send({ memberId: beneficiary._id, month: 'JUIN', amount: 10000, fees: 300, status: 'paid' });
+    await request(app)
+      .post(`/api/contributions/${contribution.body._id}/validate`)
+      .set('Authorization', `Bearer ${tresToken}`);
+    await request(app)
+      .post(`/api/contributions/${contribution.body._id}/validate`)
+      .set('Authorization', `Bearer ${presToken}`);
 
     const res = await request(app)
       .post('/api/aids')

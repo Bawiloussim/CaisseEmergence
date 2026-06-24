@@ -6,6 +6,9 @@ const generateTempPassword = require('../utils/generatePassword');
 const sendEmail = require('../utils/sendEmail');
 const { invitationEmail } = require('../utils/emailTemplates');
 const logAction = require('../utils/logAction');
+const { ACCOUNT_ROLES, VALIDATOR_ROLES } = require('../constants/roles');
+
+const ROLE_LABELS = { secretaire: 'secrétaire', tresorier: 'trésorier', president: 'président' };
 
 // GET /api/members — accessible à tout membre connecté (lecture)
 const getMembers = async (req, res) => {
@@ -64,7 +67,7 @@ const createMember = async (req, res) => {
     momoNumber,
     photo,
     role: role || 'Membre actif',
-    accountRole: accountRole === 'secretaire' ? 'secretaire' : 'membre',
+    accountRole: ACCOUNT_ROLES.includes(accountRole) ? accountRole : 'membre',
     monthlyContribution: monthlyContribution || 2000,
     joinDate,
     mustChangePassword: true,
@@ -201,12 +204,13 @@ const deleteMember = async (req, res) => {
   const member = await Member.findById(req.params.id);
   if (!member) return res.status(404).json({ message: 'Membre non trouvé' });
 
-  // Empêche de supprimer le dernier compte secrétaire (sinon plus personne
-  // ne pourrait gérer la caisse).
-  if (member.accountRole === 'secretaire') {
-    const secretaryCount = await Member.countDocuments({ accountRole: 'secretaire' });
-    if (secretaryCount <= 1) {
-      return res.status(400).json({ message: 'Impossible de supprimer le dernier compte secrétaire' });
+  // Empêche de supprimer le dernier compte d'un rôle valideur (secrétaire,
+  // trésorier, président) : sinon plus personne ne pourrait donner ce vote
+  // et les cotisations resteraient bloquées en attente indéfiniment.
+  if (VALIDATOR_ROLES.includes(member.accountRole)) {
+    const roleCount = await Member.countDocuments({ accountRole: member.accountRole });
+    if (roleCount <= 1) {
+      return res.status(400).json({ message: `Impossible de supprimer le dernier compte ${ROLE_LABELS[member.accountRole]}` });
     }
   }
 

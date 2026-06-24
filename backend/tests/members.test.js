@@ -148,6 +148,54 @@ describe('DELETE /api/members/:id', () => {
 
     expect(res.status).toBe(200);
   });
+
+  it('empêche de supprimer le dernier compte trésorier ou président', async () => {
+    const secToken = await createSecretaryToken();
+    const tresorier = await Member.create({
+      name: 'Trésorier',
+      email: 'tresorier@example.com',
+      password: 'secret123',
+      accountRole: 'tresorier',
+    });
+    const president = await Member.create({
+      name: 'Président',
+      email: 'president@example.com',
+      password: 'secret123',
+      accountRole: 'president',
+    });
+
+    const resTres = await request(app)
+      .delete(`/api/members/${tresorier._id}`)
+      .set('Authorization', `Bearer ${secToken}`);
+    expect(resTres.status).toBe(400);
+
+    const resPres = await request(app)
+      .delete(`/api/members/${president._id}`)
+      .set('Authorization', `Bearer ${secToken}`);
+    expect(resPres.status).toBe(400);
+  });
+
+  it('autorise la suppression du trésorier si un autre trésorier existe', async () => {
+    const secToken = await createSecretaryToken();
+    const tres1 = await Member.create({
+      name: 'Trésorier 1',
+      email: 'tres1@example.com',
+      password: 'secret123',
+      accountRole: 'tresorier',
+    });
+    await Member.create({
+      name: 'Trésorier 2',
+      email: 'tres2@example.com',
+      password: 'secret123',
+      accountRole: 'tresorier',
+    });
+
+    const res = await request(app)
+      .delete(`/api/members/${tres1._id}`)
+      .set('Authorization', `Bearer ${secToken}`);
+
+    expect(res.status).toBe(200);
+  });
 });
 
 describe('POST /api/members/:id/resend-invitation', () => {

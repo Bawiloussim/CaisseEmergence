@@ -1,5 +1,6 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const { ACCOUNT_ROLES } = require('../constants/roles');
 
 const memberSchema = new mongoose.Schema(
   {
@@ -18,11 +19,12 @@ const memberSchema = new mongoose.Schema(
     resetPasswordCodeHash: { type: String, select: false, default: null },
     resetPasswordExpires: { type: Date, select: false, default: null },
 
-    // 'secretaire' = accès complet (lecture + écriture)
-    // 'membre'     = accès en lecture seule
+    // 'secretaire'           = accès complet (lecture + écriture)
+    // 'tresorier'/'president' = valident les cotisations, sans droit d'édition
+    // 'membre'               = accès en lecture seule
     accountRole: {
       type: String,
-      enum: ['secretaire', 'membre'],
+      enum: ACCOUNT_ROLES,
       default: 'membre',
     },
 

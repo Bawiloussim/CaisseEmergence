@@ -28,6 +28,18 @@ async function createSecretaryAndMember() {
   return { member, secToken, memberToken };
 }
 
+async function createValidatorsAndMember() {
+  await Member.create({ name: 'Secrétaire', email: 'sec@example.com', password: 'secret123', accountRole: 'secretaire' });
+  await Member.create({ name: 'Trésorier', email: 'tres@example.com', password: 'secret123', accountRole: 'tresorier' });
+  await Member.create({ name: 'Président', email: 'pres@example.com', password: 'secret123', accountRole: 'president' });
+  const member = await Member.create({ name: 'Membre', email: 'membre@example.com', password: 'secret123', accountRole: 'membre' });
+  const secToken = await loginAs('sec@example.com', 'secret123');
+  const tresToken = await loginAs('tres@example.com', 'secret123');
+  const presToken = await loginAs('pres@example.com', 'secret123');
+  const memberToken = await loginAs('membre@example.com', 'secret123');
+  return { member, secToken, tresToken, presToken, memberToken };
+}
+
 describe('POST /api/contributions', () => {
   it('crée une cotisation quand on est secrétaire', async () => {
     const { member, secToken } = await createSecretaryAndMember();
@@ -122,6 +134,62 @@ describe('POST /api/contributions', () => {
     expect(res.status).toBe(200);
     expect(res.body).toHaveLength(1);
     expect(res.body[0].amount).toBe(10000);
+  });
+});
+
+describe('POST /api/contributions/:id/validate', () => {
+  it("ne passe en \"paid\" qu'une fois les trois rôles validés", async () => {
+    const { member, secToken, tresToken, presToken } = await createValidatorsAndMember();
+    const created = await request(app)
+      .post('/api/contributions')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: member._id, month: 'JUIN', amount: 10000 });
+    const id = created.body._id;
+
+    const afterSec = await request(app)
+      .post(`/api/contributions/${id}/validate`)
+      .set('Authorization', `Bearer ${secToken}`);
+    expect(afterSec.status).toBe(200);
+    expect(afterSec.body.status).toBe('pending');
+    expect(afterSec.body.validations.secretaire.validated).toBe(true);
+
+    const afterTres = await request(app)
+      .post(`/api/contributions/${id}/validate`)
+      .set('Authorization', `Bearer ${tresToken}`);
+    expect(afterTres.body.status).toBe('pending');
+
+    const afterPres = await request(app)
+      .post(`/api/contributions/${id}/validate`)
+      .set('Authorization', `Bearer ${presToken}`);
+    expect(afterPres.body.status).toBe('paid');
+    expect(afterPres.body.validations.tresorier.validated).toBe(true);
+    expect(afterPres.body.validations.president.validated).toBe(true);
+  });
+
+  it('refuse la validation à un membre simple', async () => {
+    const { member, secToken, memberToken } = await createValidatorsAndMember();
+    const created = await request(app)
+      .post('/api/contributions')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: member._id, month: 'JUIN', amount: 10000 });
+
+    const res = await request(app)
+      .post(`/api/contributions/${created.body._id}/validate`)
+      .set('Authorization', `Bearer ${memberToken}`);
+
+    expect(res.status).toBe(403);
+  });
+
+  it('le statut "paid" envoyé par le secrétaire à la création ne compte que comme son propre vote', async () => {
+    const { member, secToken } = await createValidatorsAndMember();
+    const res = await request(app)
+      .post('/api/contributions')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: member._id, month: 'JUIN', amount: 10000, status: 'paid' });
+
+    expect(res.body.status).toBe('pending');
+    expect(res.body.validations.secretaire.validated).toBe(true);
+    expect(res.body.validations.tresorier.validated).toBe(false);
   });
 });
 

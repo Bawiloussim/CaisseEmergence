@@ -37,6 +37,15 @@ class ContributionController {
     }
   }
 
+  async validateContribution(id) {
+    try {
+      const contribution = await api.post(`/contributions/${id}/validate`, {});
+      return { success: true, contribution: normalize(contribution) };
+    } catch (err) {
+      return { success: false, error: err.message };
+    }
+  }
+
   async deleteContribution(id) {
     try {
       await api.delete(`/contributions/${id}`);

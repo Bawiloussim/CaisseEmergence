@@ -2,6 +2,8 @@ const Contribution = require('../models/Contribution');
 const Member = require('../models/Member');
 const logAction = require('../utils/logAction');
 
+const ROLE_LABELS = { secretaire: 'secrétaire', tresorier: 'trésorier', president: 'président' };
+
 async function resourceLabel(memberId, month) {
   const member = await Member.findById(memberId);
   return `${member?.name || 'Membre inconnu'} — ${month}`;
@@ -39,13 +41,16 @@ const createContribution = async (req, res) => {
   const existing = await Contribution.findOne({ memberId, month });
   if (existing) {
     // Un membre peut renvoyer une preuve corrigée tant que son paiement
-    // précédent n'a pas déjà été validé par le secrétaire.
+    // précédent n'a pas déjà été validé par les trois valideurs. La preuve
+    // ayant changé, les validations déjà données sur l'ancienne preuve sont
+    // remises à zéro.
     if (req.user.accountRole !== 'secretaire' && existing.status !== 'paid') {
       existing.amount = amount;
       if (fees !== undefined) existing.fees = fees;
       existing.proofImage = proofImage;
       if (reference !== undefined) existing.reference = reference;
       if (paymentDate !== undefined) existing.paymentDate = paymentDate;
+      existing.resetValidations();
       await existing.save();
 
       await logAction({
@@ -61,17 +66,25 @@ const createContribution = async (req, res) => {
     return res.status(409).json({ message: 'Cotisation déjà enregistrée pour ce mois' });
   }
 
+  // Le secrétaire peut enregistrer un paiement directement comme "payé",
+  // mais cela ne constitue que son propre vote : la cotisation ne devient
+  // réellement "paid" qu'une fois les trois valideurs passés par /validate.
   const contribution = await Contribution.create({
     memberId,
     month,
     amount,
     fees,
-    status,
+    status: status === 'paid' ? 'pending' : status,
     paymentDate,
     paymentMethod,
     reference,
     proofImage,
   });
+
+  if (status === 'paid') {
+    contribution.recordValidation('secretaire', req.user._id);
+    await contribution.save();
+  }
 
   await logAction({
     action: 'create',
@@ -89,10 +102,22 @@ const updateContribution = async (req, res) => {
   const contribution = await Contribution.findById(req.params.id);
   if (!contribution) return res.status(404).json({ message: 'Cotisation non trouvée' });
 
-  const editableFields = ['memberId', 'month', 'amount', 'fees', 'status', 'paymentDate', 'paymentMethod', 'reference', 'proofImage'];
+  const editableFields = ['memberId', 'month', 'amount', 'fees', 'paymentDate', 'paymentMethod', 'reference', 'proofImage'];
   editableFields.forEach((field) => {
     if (req.body[field] !== undefined) contribution[field] = req.body[field];
   });
+
+  // Le statut "paid" ne se décide pas directement : il découle des trois
+  // validations (voir recordValidation). Mettre "paid" ici ne fait donc
+  // que compter le vote du secrétaire ; "pending"/"late" restent des
+  // corrections manuelles libres.
+  if (req.body.status !== undefined) {
+    if (req.body.status === 'paid') {
+      contribution.recordValidation('secretaire', req.user._id);
+    } else {
+      contribution.status = req.body.status;
+    }
+  }
 
   await contribution.save();
 
@@ -101,6 +126,28 @@ const updateContribution = async (req, res) => {
     resource: 'contribution',
     resourceLabel: await resourceLabel(contribution.memberId, contribution.month),
     actor: req.user,
+  });
+
+  res.json(contribution);
+};
+
+// POST /api/contributions/:id/validate — secrétaire, trésorier ou président.
+// Enregistre le vote de l'utilisateur connecté ; la cotisation passe à
+// "paid" dès que les trois rôles ont validé.
+const validateContribution = async (req, res) => {
+  const contribution = await Contribution.findById(req.params.id);
+  if (!contribution) return res.status(404).json({ message: 'Cotisation non trouvée' });
+
+  const role = req.user.accountRole;
+  contribution.recordValidation(role, req.user._id);
+  await contribution.save();
+
+  await logAction({
+    action: 'update',
+    resource: 'contribution',
+    resourceLabel: await resourceLabel(contribution.memberId, contribution.month),
+    actor: req.user,
+    details: `Validation par le ${ROLE_LABELS[role]}`,
   });
 
   res.json(contribution);
@@ -122,4 +169,4 @@ const deleteContribution = async (req, res) => {
   res.json({ message: 'Cotisation supprimée' });
 };
 
-module.exports = { getContributions, createContribution, updateContribution, deleteContribution };
+module.exports = { getContributions, createContribution, updateContribution, validateContribution, deleteContribution };

@@ -24,22 +24,27 @@ const PENDING_PROOF_POLL_MS = 30000;
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { user, isSecretaire, logout } = useAuth();
+  const { user, isSecretaire, accountRole, canValidateContribution, logout } = useAuth();
   const isSecretary = isSecretaire;
   const [settings, setSettings] = useState(() => StorageService.getSettings());
   const { showToast } = useToast();
   const { unreadCount: unreadChatCount } = useChat();
   const [pendingProofCount, setPendingProofCount] = useState(0);
 
-  // Compte les cotisations avec preuve importée par un membre et toujours
-  // "en attente" de validation, pour afficher un badge au secrétaire.
+  // Compte les cotisations avec preuve importée par un membre et que
+  // l'utilisateur connecté (secrétaire, trésorier ou président) n'a pas
+  // encore validées lui-même, pour afficher un badge ciblé.
   useEffect(() => {
-    if (!user || !isSecretary) return;
+    if (!user || !canValidateContribution) return;
 
     const loadPendingProofCount = async () => {
       try {
         const contributions = await ContributionController.getAllContributions();
-        setPendingProofCount(contributions.filter((c) => c.status === 'pending' && c.proofImage).length);
+        setPendingProofCount(
+          contributions.filter(
+            (c) => c.status === 'pending' && c.proofImage && !c.validations?.[accountRole]?.validated
+          ).length
+        );
       } catch (err) {
         console.error('Échec du comptage des preuves de paiement en attente', err);
       }
@@ -48,7 +53,7 @@ function AppContent() {
     loadPendingProofCount();
     const interval = setInterval(loadPendingProofCount, PENDING_PROOF_POLL_MS);
     return () => clearInterval(interval);
-  }, [user, isSecretary]);
+  }, [user, accountRole, canValidateContribution]);
 
   // Synchronise la liste des membres puis migre une fois pour toutes les
   // cotisations/prêts/aides qui ne vivaient jusqu'ici que dans le

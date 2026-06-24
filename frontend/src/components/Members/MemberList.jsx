@@ -79,21 +79,22 @@ const MemberList = ({ isSecretary }) => {
   };
 
   const handleDeleteMember = async (id) => {
-    if (window.confirm('Supprimer ce membre ?')) {
-      const member = MemberController.getMemberById(id);
+    if (!window.confirm('Supprimer ce membre ?')) return;
 
-      if (member?.accountId) {
-        try {
-          await api.delete(`/members/${member.accountId}`);
-        } catch (err) {
-          alert(`La suppression du compte de connexion a échoué : ${err.message}`);
-        }
+    const member = MemberController.getMemberById(id);
+
+    if (member?.accountId) {
+      try {
+        await api.delete(`/members/${member.accountId}`);
+      } catch (err) {
+        alert(`La suppression a échoué : ${err.message}`);
+        return;
       }
-
-      MemberController.deleteMember(id);
-      loadMembers();
-      setSelectedMember(null);
     }
+
+    MemberController.deleteMember(id);
+    loadMembers();
+    setSelectedMember(null);
   };
 
   const handleResendInvitation = async (member) => {

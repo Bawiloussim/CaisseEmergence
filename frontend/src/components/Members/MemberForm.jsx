@@ -182,6 +182,8 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
             >
               <option value="membre">Membre (lecture seule)</option>
               <option value="secretaire">Secrétaire (accès complet)</option>
+              <option value="tresorier">Trésorier (valide les cotisations)</option>
+              <option value="president">Président (valide les cotisations)</option>
             </select>
           </div>
 

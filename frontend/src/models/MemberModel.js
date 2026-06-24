@@ -15,7 +15,7 @@ export class MemberModel {
 
     // Compte de connexion (espace membres) lié à ce membre
     this.email = data.email || '';
-    this.accountRole = data.accountRole || 'membre'; // 'secretaire' | 'membre'
+    this.accountRole = data.accountRole || 'membre'; // 'secretaire' | 'tresorier' | 'president' | 'membre'
     this.accountId = data.accountId || ''; // identifiant du compte côté backend (MongoDB)
   }
 

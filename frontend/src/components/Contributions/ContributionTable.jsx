@@ -5,6 +5,7 @@ const ContributionTable = ({
   contributions,
   members,
   isSecretary = false,
+  canValidate = false,
   currentMemberId,
   onEditContribution,
   onDeleteContribution,
@@ -33,12 +34,23 @@ const ContributionTable = ({
     return contributions.find(c => c.memberId === memberId && c.month === month);
   };
 
-  const getStatusDisplay = (status) => {
-    switch(status) {
+  const getValidationCount = (contribution) => {
+    if (!contribution?.validations) return 0;
+    return ['secretaire', 'tresorier', 'president'].filter((role) => contribution.validations[role]?.validated).length;
+  };
+
+  const getStatusDisplay = (contribution) => {
+    switch (contribution.status) {
       case 'paid':
         return <span className="inline-flex items-center gap-1 text-green-600"><CheckCircle size={14} /> Payé</span>;
-      case 'pending':
-        return <span className="inline-flex items-center gap-1 text-yellow-600"><Clock size={14} /> Attente</span>;
+      case 'pending': {
+        const count = getValidationCount(contribution);
+        return (
+          <span className="inline-flex items-center gap-1 text-yellow-600">
+            <Clock size={14} /> Attente{count > 0 ? ` (${count}/3)` : ''}
+          </span>
+        );
+      }
       case 'late':
         return <span className="inline-flex items-center gap-1 text-red-600"><XCircle size={14} /> Retard</span>;
       default:
@@ -78,9 +90,9 @@ const ContributionTable = ({
                     <td key={month} className="px-3 py-3 text-center">
                       <div className="flex flex-col items-center gap-1">
                         <div>
-                          {contrib ? getStatusDisplay(contrib.status) : '—'}
+                          {contrib ? getStatusDisplay(contrib) : '—'}
                         </div>
-                        {contrib?.proofImage && (isSecretary || contrib.memberId === currentMemberId) && (
+                        {contrib?.proofImage && (isSecretary || canValidate || contrib.memberId === currentMemberId) && (
                           <button
                             onClick={() => onViewProof && onViewProof(contrib)}
                             title="Voir la preuve de paiement"

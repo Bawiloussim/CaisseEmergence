@@ -107,7 +107,13 @@ export function AuthProvider({ children }) {
     resetPassword,
     updateProfile,
     isAuthenticated: !!user,
+    accountRole: user?.accountRole,
     isSecretaire: user?.accountRole === 'secretaire',
+    isTresorier: user?.accountRole === 'tresorier',
+    isPresident: user?.accountRole === 'president',
+    // Secrétaire, trésorier et président valident chacun les cotisations ;
+    // une cotisation ne passe "payée" que lorsque les trois ont validé.
+    canValidateContribution: ['secretaire', 'tresorier', 'president'].includes(user?.accountRole),
     mustChangePassword: !!user?.mustChangePassword,
   };
 

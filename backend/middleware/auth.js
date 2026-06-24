@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const Member = require('../models/Member');
+const { VALIDATOR_ROLES } = require('../constants/roles');
 
 /**
  * Vérifie le token JWT (en-tête "Authorization: Bearer <token>") et
@@ -44,4 +45,15 @@ const requireSecretary = (req, res, next) => {
   next();
 };
 
-module.exports = { protect, requireSecretary };
+/**
+ * À utiliser après `protect`. Bloque l'accès si l'utilisateur n'est pas
+ * l'un des trois valideurs de cotisation (secrétaire, trésorier, président).
+ */
+const requireValidator = (req, res, next) => {
+  if (!VALIDATOR_ROLES.includes(req.user?.accountRole)) {
+    return res.status(403).json({ message: 'Accès réservé au secrétaire, au trésorier et au président' });
+  }
+  next();
+};
+
+module.exports = { protect, requireSecretary, requireValidator };

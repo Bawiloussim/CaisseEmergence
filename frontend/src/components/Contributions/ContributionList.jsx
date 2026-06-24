@@ -4,12 +4,15 @@ import ContributionForm from './ContributionForm';
 import ContributionProofForm from './ContributionProofForm';
 import ContributionController from '../../controllers/ContributionController';
 import MemberController from '../../controllers/MemberController';
-import { Plus, Smartphone, Upload } from 'lucide-react';
+import { Plus, Smartphone, Upload, CheckCircle, Clock } from 'lucide-react';
 import { MONTHS_FULL } from '../../models/ContributionModel';
 import { useAuth } from '../Auth/AuthContext';
 import Modal from '../UI/Modal';
 
 const FLOOZ_NUMBER = '79854438';
+
+const VALIDATOR_ROLES = ['secretaire', 'tresorier', 'president'];
+const ROLE_LABELS = { secretaire: 'Secrétaire', tresorier: 'Trésorier', president: 'Président' };
 
 const ContributionList = ({ isSecretary }) => {
   const [contributions, setContributions] = useState([]);
@@ -21,7 +24,7 @@ const ContributionList = ({ isSecretary }) => {
   const [showProofForm, setShowProofForm] = useState(false);
   const [viewingProof, setViewingProof] = useState(null);
 
-  const { user } = useAuth();
+  const { user, accountRole, canValidateContribution } = useAuth();
   // Le membre réellement connecté, pour qu'il ne puisse importer une
   // preuve de paiement que pour son propre compte.
   const currentMember = useMemo(
@@ -100,10 +103,10 @@ const ContributionList = ({ isSecretary }) => {
   };
 
   const handleValidateContribution = async (contribution) => {
-    const result = await ContributionController.updateContribution(contribution.id, { status: 'paid' });
+    const result = await ContributionController.validateContribution(contribution.id);
     if (result.success) {
       await loadData();
-      setViewingProof(null);
+      setViewingProof(result.contribution);
     } else {
       alert(result.error || 'Erreur lors de la validation');
     }
@@ -163,6 +166,7 @@ const ContributionList = ({ isSecretary }) => {
         contributions={contributions}
         members={members}
         isSecretary={isSecretary}
+        canValidate={canValidateContribution}
         currentMemberId={currentMember?.accountId}
         onEditContribution={(c) => { setEditData(c); setShowForm(true); }}
         onDeleteContribution={handleDeleteContribution}
@@ -213,11 +217,32 @@ const ContributionList = ({ isSecretary }) => {
               {MONTHS_FULL[viewingProof.month] || viewingProof.month} — {viewingProof.amount.toLocaleString('fr-FR')} FCFA
             </p>
             <img src={viewingProof.proofImage} alt="Preuve de paiement" className="w-full rounded-lg border" />
+
+            <div className="space-y-1">
+              <p className="text-xs font-medium text-gray-500">
+                Validation ({VALIDATOR_ROLES.filter((r) => viewingProof.validations?.[r]?.validated).length}/3)
+              </p>
+              {VALIDATOR_ROLES.map((role) => {
+                const v = viewingProof.validations?.[role];
+                const validator = v?.by && members.find((m) => m.accountId === v.by);
+                return (
+                  <div key={role} className="flex items-center gap-2 text-sm">
+                    {v?.validated
+                      ? <CheckCircle size={14} className="text-green-600" />
+                      : <Clock size={14} className="text-gray-300" />}
+                    <span className={v?.validated ? 'text-navy' : 'text-gray-400'}>
+                      {ROLE_LABELS[role]}{v?.validated && validator ? ` — ${validator.name}` : ''}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+
             <div className="flex justify-end gap-3">
               <button onClick={() => setViewingProof(null)} className="btn-outline">Fermer</button>
-              {isSecretary && viewingProof.status === 'pending' && (
+              {canValidateContribution && viewingProof.status !== 'paid' && !viewingProof.validations?.[accountRole]?.validated && (
                 <button onClick={() => handleValidateContribution(viewingProof)} className="btn-primary">
-                  Valider ce paiement
+                  Valider en tant que {ROLE_LABELS[accountRole]}
                 </button>
               )}
             </div>

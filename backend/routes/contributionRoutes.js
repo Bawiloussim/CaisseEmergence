@@ -3,9 +3,10 @@ const {
   getContributions,
   createContribution,
   updateContribution,
+  validateContribution,
   deleteContribution,
 } = require('../controllers/contributionController');
-const { protect, requireSecretary } = require('../middleware/auth');
+const { protect, requireSecretary, requireValidator } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -17,6 +18,8 @@ router.get('/', getContributions);
 // membre ou avec un statut différent de "en attente".
 router.post('/', createContribution);
 router.put('/:id', requireSecretary, updateContribution);
+// Secrétaire, trésorier ou président : enregistre son vote de validation.
+router.post('/:id/validate', requireValidator, validateContribution);
 router.delete('/:id', requireSecretary, deleteContribution);
 
 module.exports = router;

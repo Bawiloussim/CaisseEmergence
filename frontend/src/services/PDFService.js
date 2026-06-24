@@ -119,12 +119,15 @@ class PDFService {
       const memberCots = contributions.filter(c => c.memberId === m.accountId && c.status === 'paid');
       const totalCot = memberCots.reduce((s, c) => s + (c.amount || 0), 0);
       const totalFee = memberCots.reduce((s, c) => s + (c.fees || 0), 0);
+      // Plusieurs versements peuvent couvrir le même mois (paiements
+      // fractionnés) : on compte les mois distincts, pas les versements.
+      const paidMonthsCount = new Set(memberCots.map(c => c.month)).size;
       return [
         String(i + 1), m.name, m.role,
         this.formatCurrency(totalCot),
         this.formatCurrency(totalFee),
         this.formatCurrency(totalCot * 1.5),
-        `${memberCots.length}/11`
+        `${paidMonthsCount}/11`
       ];
     });
 
@@ -174,9 +177,21 @@ class PDFService {
     const rows = (members || []).map(m => {
       const row = [m.name];
       monthList.forEach(month => {
-        const c = (contributions || []).find(x => x.memberId === m.accountId && x.month === month);
-        if (!c) row.push('—');
-        else row.push(c.status === 'paid' ? `OK ${(c.amount/1000).toFixed(0)}k` : (c.status === 'late' ? 'RETARD' : 'ATTENTE'));
+        // Plusieurs versements peuvent exister pour le même mois (paiements
+        // fractionnés) : on les regroupe en un seul libellé (montant total,
+        // statut le plus favorable parmi les versements du mois).
+        const monthContribs = (contributions || []).filter(x => x.memberId === m.accountId && x.month === month);
+        if (!monthContribs.length) {
+          row.push('—');
+          return;
+        }
+        const totalAmount = monthContribs.reduce((s, c) => s + (c.amount || 0), 0);
+        const combinedStatus = monthContribs.some(c => c.status === 'paid')
+          ? 'paid'
+          : monthContribs.some(c => c.status === 'pending') ? 'pending' : 'late';
+        const label = combinedStatus === 'paid' ? 'OK' : (combinedStatus === 'late' ? 'RETARD' : 'ATTENTE');
+        const suffix = monthContribs.length > 1 ? ` (${monthContribs.length}v)` : '';
+        row.push(`${label} ${(totalAmount / 1000).toFixed(0)}k${suffix}`);
       });
       const paidCots = (contributions || []).filter(c => c.memberId === m.accountId && c.status === 'paid');
       const totalCot = paidCots.reduce((s, c) => s + (c.amount || 0), 0);

@@ -88,7 +88,7 @@ describe('POST /api/contributions', () => {
     expect(res.body.status).toBe('pending');
   });
 
-  it('permet à un membre de renvoyer une preuve corrigée tant que son paiement n\'est pas validé', async () => {
+  it('permet à un membre de soumettre plusieurs preuves pour le même mois (paiements fractionnés)', async () => {
     const { member, memberToken } = await createSecretaryAndMember();
     await request(app)
       .post('/api/contributions')
@@ -98,26 +98,38 @@ describe('POST /api/contributions', () => {
     const res = await request(app)
       .post('/api/contributions')
       .set('Authorization', `Bearer ${memberToken}`)
-      .send({ memberId: member._id, month: 'JUIN', amount: 12000, proofImage: 'data:image/png;base64,def' });
+      .send({ memberId: member._id, month: 'JUIN', amount: 2000, proofImage: 'data:image/png;base64,def' });
 
-    expect(res.status).toBe(200);
-    expect(res.body.amount).toBe(12000);
-    expect(res.body.proofImage).toBe('data:image/png;base64,def');
+    expect(res.status).toBe(201);
+    expect(res.body.amount).toBe(2000);
+
+    const list = await request(app).get('/api/contributions').set('Authorization', `Bearer ${memberToken}`);
+    expect(list.body).toHaveLength(2);
   });
 
-  it('refuse un doublon membre+mois', async () => {
+  it('ne facture les 300 FCFA de frais de gestion qu\'une seule fois par membre et par mois', async () => {
     const { member, secToken } = await createSecretaryAndMember();
-    await request(app)
+    const first = await request(app)
       .post('/api/contributions')
       .set('Authorization', `Bearer ${secToken}`)
       .send({ memberId: member._id, month: 'JUIN', amount: 10000 });
+    expect(first.body.fees).toBe(300);
 
+    const second = await request(app)
+      .post('/api/contributions')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: member._id, month: 'JUIN', amount: 5000, fees: 300 });
+    expect(second.body.fees).toBe(0);
+  });
+
+  it('refuse un versement inférieur au minimum de 2000 FCFA', async () => {
+    const { member, secToken } = await createSecretaryAndMember();
     const res = await request(app)
       .post('/api/contributions')
       .set('Authorization', `Bearer ${secToken}`)
-      .send({ memberId: member._id, month: 'JUIN', amount: 5000 });
+      .send({ memberId: member._id, month: 'JUIN', amount: 1000 });
 
-    expect(res.status).toBe(409);
+    expect(res.status).toBe(400);
   });
 
   it('un autre membre voit la cotisation créée par le secrétaire', async () => {

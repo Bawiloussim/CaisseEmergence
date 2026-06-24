@@ -18,12 +18,16 @@ const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onReques
   const paidContributions = contributions.filter(c => c.status === 'paid');
   const totalCotised = paidContributions.reduce((sum, c) => sum + c.amount, 0);
   const maxLoan = totalCotised * 1.5;
-  const paidMonths = paidContributions.length;
+  // Un membre peut avoir plusieurs versements pour le même mois : on compte
+  // les mois distincts, pas le nombre d'enregistrements.
+  const paidMonths = new Set(paidContributions.map(c => c.month)).size;
 
   const getMonthStatus = (month) => {
-    const contrib = contributions.find(c => c.month === month);
-    if (!contrib) return null;
-    return contrib.status;
+    const monthContribs = contributions.filter(c => c.month === month);
+    if (!monthContribs.length) return null;
+    if (monthContribs.some(c => c.status === 'paid')) return 'paid';
+    if (monthContribs.some(c => c.status === 'pending')) return 'pending';
+    return 'late';
   };
 
   const getStatusIcon = (status) => {

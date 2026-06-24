@@ -30,8 +30,10 @@ const ContributionTable = ({
       .reduce((sum, c) => sum + c.fees, 0);
   };
 
-  const getMonthContribution = (memberId, month) => {
-    return contributions.find(c => c.memberId === memberId && c.month === month);
+  // Un membre peut avoir plusieurs versements pour le même mois (paiements
+  // fractionnés) : on les retourne tous, empilés dans la cellule.
+  const getMonthContributions = (memberId, month) => {
+    return contributions.filter(c => c.memberId === memberId && c.month === month);
   };
 
   const getValidationCount = (contribution) => {
@@ -85,35 +87,49 @@ const ContributionTable = ({
               <tr key={member.id} className="border-b border-gray-100 hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">{member.name}</td>
                 {MONTHS.map(month => {
-                  const contrib = getMonthContribution(member.accountId, month);
+                  const monthContribs = getMonthContributions(member.accountId, month);
                   return (
                     <td key={month} className="px-3 py-3 text-center">
-                      <div className="flex flex-col items-center gap-1">
-                        <div>
-                          {contrib ? getStatusDisplay(contrib) : '—'}
+                      {monthContribs.length === 0 ? (
+                        <span className="text-gray-400">—</span>
+                      ) : (
+                        <div className="flex flex-col items-stretch gap-2 divide-y divide-gray-100">
+                          {monthContribs.map((contrib) => (
+                            <div key={contrib.id} className="flex flex-col items-center gap-1 pt-1 first:pt-0">
+                              <div className="flex flex-col items-center">
+                                {getStatusDisplay(contrib)}
+                                <span className="text-[11px] text-gray-400">{contrib.amount.toLocaleString('fr-FR')} FCFA</span>
+                              </div>
+                              {contrib.proofImage && (isSecretary || canValidate || contrib.memberId === currentMemberId) && (
+                                <button
+                                  onClick={() => onViewProof && onViewProof(contrib)}
+                                  title="Voir la preuve de paiement"
+                                  className="text-xs text-navy/80 hover:underline inline-flex items-center gap-1"
+                                >
+                                  <ImageIcon size={12} /> Preuve
+                                </button>
+                              )}
+                              {isSecretary && (
+                                <div className="flex items-center gap-2">
+                                  <button
+                                    onClick={() => onEditContribution && onEditContribution(contrib)}
+                                    className="text-xs text-navy/80 hover:underline"
+                                  >Modifier</button>
+                                  <button
+                                    onClick={() => onDeleteContribution && onDeleteContribution(contrib)}
+                                    className="text-xs text-red-600 hover:underline"
+                                  >Supprimer</button>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                          {monthContribs.length > 1 && (
+                            <p className="text-[10px] text-gray-400 pt-1">
+                              Total : {monthContribs.reduce((s, c) => s + c.amount, 0).toLocaleString('fr-FR')} FCFA
+                            </p>
+                          )}
                         </div>
-                        {contrib?.proofImage && (isSecretary || canValidate || contrib.memberId === currentMemberId) && (
-                          <button
-                            onClick={() => onViewProof && onViewProof(contrib)}
-                            title="Voir la preuve de paiement"
-                            className="text-xs text-navy/80 hover:underline inline-flex items-center gap-1"
-                          >
-                            <ImageIcon size={12} /> Preuve
-                          </button>
-                        )}
-                        {isSecretary && contrib && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <button
-                              onClick={() => onEditContribution && onEditContribution(contrib)}
-                              className="text-xs text-navy/80 hover:underline"
-                            >Modifier</button>
-                            <button
-                              onClick={() => onDeleteContribution && onDeleteContribution(contrib)}
-                              className="text-xs text-red-600 hover:underline"
-                            >Supprimer</button>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </td>
                   );
                 })}

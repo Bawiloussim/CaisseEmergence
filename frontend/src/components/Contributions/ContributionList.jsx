@@ -77,28 +77,12 @@ const ContributionList = ({ isSecretary }) => {
       return upd;
     }
 
-    // Sinon on tente la création ; si elle existe déjà, on propose la mise à jour
+    // Sinon on crée un nouveau versement (un membre peut cotiser plusieurs
+    // fois pour le même mois, paiements fractionnés).
     const result = await ContributionController.addContribution(contributionData);
     if (result.success) {
       await loadData();
       setShowForm(false);
-      return result;
-    }
-
-    if (result.error && result.error.toLowerCase().includes('déjà')) {
-      const existing = await ContributionController.getContributionByMemberAndMonth(contributionData.memberId, contributionData.month);
-      if (existing) {
-        if (window.confirm('Une cotisation existe déjà pour ce membre et ce mois. Voulez-vous la mettre à jour ?')) {
-          const upd = await ContributionController.updateContribution(existing.id, contributionData);
-          if (upd.success) {
-            await loadData();
-            setShowForm(false);
-          } else {
-            alert(upd.error || 'Erreur lors de la mise à jour');
-          }
-          return upd;
-        }
-      }
     } else {
       alert(result.error || (result.errors && result.errors.join('\n')) || 'Erreur lors de l\'enregistrement');
     }

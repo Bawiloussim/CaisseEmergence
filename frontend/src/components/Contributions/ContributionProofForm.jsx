@@ -86,10 +86,13 @@ const ContributionProofForm = ({ onClose, onSubmit, member, existingMonths = [] 
               value={formData.amount}
               onChange={handleChange}
               className="input"
-              min="1"
+              min="2000"
               step="1"
               required
             />
+            <p className="text-xs text-gray-400 mt-1">
+              Minimum 2000 FCFA par versement. Vous pouvez cotiser plusieurs fois pour le même mois.
+            </p>
           </div>
 
           <div>

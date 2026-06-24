@@ -108,7 +108,7 @@ const ContributionForm = ({ onClose, onSubmit, members, initialData }) => {
               value={formData.amount}
               onChange={handleChange}
               className="input"
-              min="1"
+              min="2000"
               step="1"
             />
           </div>

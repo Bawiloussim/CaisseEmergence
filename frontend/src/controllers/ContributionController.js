@@ -109,11 +109,6 @@ class ContributionController {
     return summary;
   }
 
-  async getContributionByMemberAndMonth(memberId, month) {
-    const contributions = await this.getAllContributions();
-    return contributions.find((c) => c.memberId === memberId && c.month === month);
-  }
-
   // Résumé pour un membre donné
   async getMemberContributionSummary(memberId) {
     const contributions = (await this.getAllContributions()).filter((c) => c.memberId === memberId);

@@ -11,7 +11,12 @@ const contributionSchema = new mongoose.Schema(
   {
     memberId: { type: mongoose.Schema.Types.ObjectId, ref: 'Member', required: true },
     month: { type: String, required: true },
-    amount: { type: Number, required: true, min: 1 },
+    // Un membre peut cotiser plusieurs fois dans le même mois (paiements
+    // fractionnés), mais chaque versement doit atteindre ce minimum.
+    amount: { type: Number, required: true, min: [2000, 'Le montant minimum par versement est de 2000 FCFA'] },
+    // 300 FCFA de frais de gestion, comptés une seule fois par membre et par
+    // mois : seul le premier versement du mois les porte (voir
+    // contributionController.createContribution).
     fees: { type: Number, default: 300 },
     status: { type: String, enum: ['paid', 'pending', 'late'], default: 'pending' },
     paymentDate: { type: String, default: () => new Date().toISOString().split('T')[0] },
@@ -31,8 +36,10 @@ const contributionSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Une seule cotisation par membre et par mois.
-contributionSchema.index({ memberId: 1, month: 1 }, { unique: true });
+// Un membre peut avoir plusieurs cotisations pour le même mois (paiements
+// fractionnés) ; cet index sert seulement à accélérer les requêtes par
+// membre + mois, ce n'est plus une contrainte d'unicité.
+contributionSchema.index({ memberId: 1, month: 1 });
 
 contributionSchema.methods.isFullyValidated = function () {
   return VALIDATOR_ROLES.every((role) => this.validations[role].validated);
@@ -47,15 +54,6 @@ contributionSchema.methods.recordValidation = function (role, memberId) {
   if (this.isFullyValidated()) {
     this.status = 'paid';
   }
-};
-
-// Annule les validations en cours (ex: le membre renvoie une preuve corrigée
-// après qu'un ou plusieurs valideurs ont déjà voté sur l'ancienne preuve).
-contributionSchema.methods.resetValidations = function () {
-  VALIDATOR_ROLES.forEach((role) => {
-    this.validations[role] = { validated: false, by: null, at: null };
-  });
-  this.status = 'pending';
 };
 
 // Annule le vote d'un seul valideur (ex: validation donnée par erreur).

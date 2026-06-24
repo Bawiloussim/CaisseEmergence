@@ -7,6 +7,7 @@ const { MONTHS_FULL } = require('../utils/cycleMonth');
 const { VALIDATOR_ROLES } = require('../constants/roles');
 
 const ROLE_LABELS = { secretaire: 'secrétaire', tresorier: 'trésorier', president: 'président' };
+const MIN_CONTRIBUTION_AMOUNT = 2000;
 
 async function resourceLabel(memberId, month) {
   const member = await Member.findById(memberId);
@@ -58,10 +59,12 @@ const getContributions = async (req, res) => {
 // POST /api/contributions — le secrétaire peut enregistrer un paiement pour
 // n'importe quel membre avec le statut de son choix ; un membre ne peut
 // importer une preuve de paiement (capture d'écran) que pour lui-même, et
-// celle-ci reste "en attente" jusqu'à validation par le secrétaire.
+// celle-ci reste "en attente" jusqu'à validation par le secrétaire. Un même
+// membre peut cotiser plusieurs fois pour le même mois (paiements
+// fractionnés) : chaque soumission crée un nouveau versement distinct.
 const createContribution = async (req, res) => {
-  const { month, amount, fees, paymentDate, paymentMethod, reference, proofImage } = req.body;
-  let { memberId, status } = req.body;
+  const { month, paymentDate, paymentMethod, reference, proofImage } = req.body;
+  let { memberId, status, amount, fees } = req.body;
 
   if (req.user.accountRole !== 'secretaire') {
     memberId = String(req.user._id);
@@ -74,38 +77,15 @@ const createContribution = async (req, res) => {
   if (!memberId || !month) {
     return res.status(400).json({ message: 'Membre et mois requis' });
   }
-  if (!amount || amount <= 0) {
-    return res.status(400).json({ message: 'Le montant doit être supérieur à 0' });
+  if (!amount || amount < MIN_CONTRIBUTION_AMOUNT) {
+    return res.status(400).json({ message: `Le montant minimum par versement est de ${MIN_CONTRIBUTION_AMOUNT} FCFA` });
   }
 
-  const existing = await Contribution.findOne({ memberId, month });
-  if (existing) {
-    // Un membre peut renvoyer une preuve corrigée tant que son paiement
-    // précédent n'a pas déjà été validé par les trois valideurs. La preuve
-    // ayant changé, les validations déjà données sur l'ancienne preuve sont
-    // remises à zéro.
-    if (req.user.accountRole !== 'secretaire' && existing.status !== 'paid') {
-      existing.amount = amount;
-      if (fees !== undefined) existing.fees = fees;
-      existing.proofImage = proofImage;
-      if (reference !== undefined) existing.reference = reference;
-      if (paymentDate !== undefined) existing.paymentDate = paymentDate;
-      existing.resetValidations();
-      await existing.save();
-
-      await logAction({
-        action: 'update',
-        resource: 'contribution',
-        resourceLabel: await resourceLabel(memberId, month),
-        actor: req.user,
-        details: 'Preuve de paiement renvoyée par le membre',
-      });
-      await notifyPendingValidators(existing, { excludeRole: req.user.accountRole });
-
-      return res.json(existing);
-    }
-    return res.status(409).json({ message: 'Cotisation déjà enregistrée pour ce mois' });
-  }
+  // Les 300 FCFA de frais de gestion ne comptent qu'une fois par membre et
+  // par mois : seul le premier versement du mois les porte, les suivants
+  // n'en portent pas, même s'il y en a plusieurs.
+  const isFirstOfMonth = (await Contribution.countDocuments({ memberId, month })) === 0;
+  fees = isFirstOfMonth ? (fees ?? 300) : 0;
 
   // Le secrétaire peut enregistrer un paiement directement comme "payé",
   // mais cela ne constitue que son propre vote : la cotisation ne devient
@@ -143,6 +123,10 @@ const createContribution = async (req, res) => {
 const updateContribution = async (req, res) => {
   const contribution = await Contribution.findById(req.params.id);
   if (!contribution) return res.status(404).json({ message: 'Cotisation non trouvée' });
+
+  if (req.body.amount !== undefined && req.body.amount < MIN_CONTRIBUTION_AMOUNT) {
+    return res.status(400).json({ message: `Le montant minimum par versement est de ${MIN_CONTRIBUTION_AMOUNT} FCFA` });
+  }
 
   const editableFields = ['memberId', 'month', 'amount', 'fees', 'paymentDate', 'paymentMethod', 'reference', 'proofImage'];
   editableFields.forEach((field) => {

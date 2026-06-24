@@ -114,4 +114,33 @@ function resetCodeEmail({ name, code, associationName }) {
   </div>`;
 }
 
-module.exports = { invitationEmail, meetingReminderEmail, resetCodeEmail };
+/**
+ * Envoyé à un valideur (secrétaire, trésorier ou président) lorsqu'une
+ * cotisation attend encore son vote.
+ */
+function contributionValidationNeededEmail({ name, memberName, month, amount, associationName, loginUrl }) {
+  return `
+  <div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2a24;">
+    <h2 style="color:#09324e; margin-bottom: 4px;">${associationName}</h2>
+    <p style="color:#8a978f; margin-top:0; letter-spacing:1px; font-size:12px; text-transform:uppercase;">
+      Épargne · Crédit · Solidarité
+    </p>
+
+    <p>Bonjour ${name},</p>
+    <p>
+      La cotisation de <strong>${memberName}</strong> pour <strong>${month}</strong>
+      (${amount.toLocaleString('fr-FR')} FCFA) attend encore votre validation.
+      Elle ne sera comptée comme payée qu'une fois le secrétaire, le trésorier
+      et le président passés par l'application.
+    </p>
+
+    <p style="margin: 24px 0;">
+      <a href="${loginUrl}"
+         style="background:#c48a21; color:#072434; padding:12px 24px; border-radius:9999px; text-decoration:none; font-weight:bold; display:inline-block;">
+        Valider la cotisation
+      </a>
+    </p>
+  </div>`;
+}
+
+module.exports = { invitationEmail, meetingReminderEmail, resetCodeEmail, contributionValidationNeededEmail };

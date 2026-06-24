@@ -4,6 +4,7 @@ const {
   createContribution,
   updateContribution,
   validateContribution,
+  unvalidateContribution,
   deleteContribution,
 } = require('../controllers/contributionController');
 const { protect, requireSecretary, requireValidator } = require('../middleware/auth');
@@ -20,6 +21,8 @@ router.post('/', createContribution);
 router.put('/:id', requireSecretary, updateContribution);
 // Secrétaire, trésorier ou président : enregistre son vote de validation.
 router.post('/:id/validate', requireValidator, validateContribution);
+// Annule son propre vote (validation donnée par erreur).
+router.delete('/:id/validate', requireValidator, unvalidateContribution);
 router.delete('/:id', requireSecretary, deleteContribution);
 
 module.exports = router;

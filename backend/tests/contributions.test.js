@@ -193,6 +193,47 @@ describe('POST /api/contributions/:id/validate', () => {
   });
 });
 
+describe('DELETE /api/contributions/:id/validate', () => {
+  it('annule le vote du valideur et repasse "paid" en "pending"', async () => {
+    const { member, secToken, tresToken, presToken } = await createValidatorsAndMember();
+    const created = await request(app)
+      .post('/api/contributions')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: member._id, month: 'JUIN', amount: 10000 });
+    const id = created.body._id;
+
+    await request(app).post(`/api/contributions/${id}/validate`).set('Authorization', `Bearer ${secToken}`);
+    await request(app).post(`/api/contributions/${id}/validate`).set('Authorization', `Bearer ${tresToken}`);
+    const fullyValidated = await request(app)
+      .post(`/api/contributions/${id}/validate`)
+      .set('Authorization', `Bearer ${presToken}`);
+    expect(fullyValidated.body.status).toBe('paid');
+
+    const res = await request(app)
+      .delete(`/api/contributions/${id}/validate`)
+      .set('Authorization', `Bearer ${presToken}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe('pending');
+    expect(res.body.validations.president.validated).toBe(false);
+    expect(res.body.validations.secretaire.validated).toBe(true);
+  });
+
+  it("refuse d'annuler un vote qui n'a pas été donné", async () => {
+    const { member, secToken, tresToken } = await createValidatorsAndMember();
+    const created = await request(app)
+      .post('/api/contributions')
+      .set('Authorization', `Bearer ${secToken}`)
+      .send({ memberId: member._id, month: 'JUIN', amount: 10000 });
+
+    const res = await request(app)
+      .delete(`/api/contributions/${created.body._id}/validate`)
+      .set('Authorization', `Bearer ${tresToken}`);
+
+    expect(res.status).toBe(400);
+  });
+});
+
 describe('DELETE /api/contributions/:id', () => {
   it('supprime une cotisation', async () => {
     const { member, secToken } = await createSecretaryAndMember();

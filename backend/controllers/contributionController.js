@@ -1,12 +1,52 @@
 const Contribution = require('../models/Contribution');
 const Member = require('../models/Member');
 const logAction = require('../utils/logAction');
+const sendEmail = require('../utils/sendEmail');
+const { contributionValidationNeededEmail } = require('../utils/emailTemplates');
+const { MONTHS_FULL } = require('../utils/cycleMonth');
+const { VALIDATOR_ROLES } = require('../constants/roles');
 
 const ROLE_LABELS = { secretaire: 'secrétaire', tresorier: 'trésorier', president: 'président' };
 
 async function resourceLabel(memberId, month) {
   const member = await Member.findById(memberId);
   return `${member?.name || 'Membre inconnu'} — ${month}`;
+}
+
+// Prévient par email les valideurs n'ayant pas encore voté qu'une cotisation
+// attend leur validation. Best-effort : un envoi en échec n'empêche pas les
+// autres ni la requête en cours.
+async function notifyPendingValidators(contribution, { excludeRole } = {}) {
+  if (contribution.status === 'paid') return;
+
+  const pendingRoles = VALIDATOR_ROLES.filter(
+    (role) => role !== excludeRole && !contribution.validations[role].validated
+  );
+  if (!pendingRoles.length) return;
+
+  const [validators, member] = await Promise.all([
+    Member.find({ accountRole: { $in: pendingRoles } }),
+    Member.findById(contribution.memberId),
+  ]);
+
+  await Promise.all(
+    validators.map((validator) =>
+      sendEmail({
+        to: validator.email,
+        subject: `Cotisation à valider — ${member?.name || 'Membre'} (${MONTHS_FULL[contribution.month] || contribution.month})`,
+        html: contributionValidationNeededEmail({
+          name: validator.name,
+          memberName: member?.name || 'Un membre',
+          month: MONTHS_FULL[contribution.month] || contribution.month,
+          amount: contribution.amount,
+          associationName: process.env.ASSOCIATION_NAME || 'La Caisse Emergence',
+          loginUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+        }),
+      }).catch((err) =>
+        console.error(`Échec de l'envoi du rappel de validation à ${validator.email} :`, err.message)
+      )
+    )
+  );
 }
 
 // GET /api/contributions — accessible à tout membre connecté (lecture)
@@ -60,6 +100,7 @@ const createContribution = async (req, res) => {
         actor: req.user,
         details: 'Preuve de paiement renvoyée par le membre',
       });
+      await notifyPendingValidators(existing, { excludeRole: req.user.accountRole });
 
       return res.json(existing);
     }
@@ -93,6 +134,7 @@ const createContribution = async (req, res) => {
     actor: req.user,
     details: proofImage ? 'Preuve de paiement importée par le membre' : '',
   });
+  await notifyPendingValidators(contribution, { excludeRole: req.user.accountRole });
 
   res.status(201).json(contribution);
 };
@@ -149,6 +191,33 @@ const validateContribution = async (req, res) => {
     actor: req.user,
     details: `Validation par le ${ROLE_LABELS[role]}`,
   });
+  await notifyPendingValidators(contribution, { excludeRole: role });
+
+  res.json(contribution);
+};
+
+// DELETE /api/contributions/:id/validate — secrétaire, trésorier ou
+// président. Annule le propre vote de l'utilisateur connecté (ex: validation
+// donnée par erreur). Si la cotisation était "paid", elle redevient "pending".
+const unvalidateContribution = async (req, res) => {
+  const contribution = await Contribution.findById(req.params.id);
+  if (!contribution) return res.status(404).json({ message: 'Cotisation non trouvée' });
+
+  const role = req.user.accountRole;
+  if (!contribution.validations[role].validated) {
+    return res.status(400).json({ message: "Vous n'avez pas encore validé cette cotisation" });
+  }
+
+  contribution.revokeValidation(role);
+  await contribution.save();
+
+  await logAction({
+    action: 'update',
+    resource: 'contribution',
+    resourceLabel: await resourceLabel(contribution.memberId, contribution.month),
+    actor: req.user,
+    details: `Validation annulée par le ${ROLE_LABELS[role]}`,
+  });
 
   res.json(contribution);
 };
@@ -169,4 +238,11 @@ const deleteContribution = async (req, res) => {
   res.json({ message: 'Cotisation supprimée' });
 };
 
-module.exports = { getContributions, createContribution, updateContribution, validateContribution, deleteContribution };
+module.exports = {
+  getContributions,
+  createContribution,
+  updateContribution,
+  validateContribution,
+  unvalidateContribution,
+  deleteContribution,
+};

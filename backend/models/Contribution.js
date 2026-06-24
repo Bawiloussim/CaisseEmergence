@@ -58,4 +58,14 @@ contributionSchema.methods.resetValidations = function () {
   this.status = 'pending';
 };
 
+// Annule le vote d'un seul valideur (ex: validation donnée par erreur).
+// Si la cotisation était "paid", elle redevient "pending" puisqu'elle
+// n'est plus validée par les trois rôles.
+contributionSchema.methods.revokeValidation = function (role) {
+  this.validations[role] = { validated: false, by: null, at: null };
+  if (this.status === 'paid') {
+    this.status = 'pending';
+  }
+};
+
 module.exports = mongoose.model('Contribution', contributionSchema);

@@ -4,7 +4,7 @@ import ContributionForm from './ContributionForm';
 import ContributionProofForm from './ContributionProofForm';
 import ContributionController from '../../controllers/ContributionController';
 import MemberController from '../../controllers/MemberController';
-import { Plus, Smartphone, Upload, CheckCircle, Clock } from 'lucide-react';
+import { Plus, Smartphone, Upload, CheckCircle, Clock, Filter } from 'lucide-react';
 import { MONTHS_FULL } from '../../models/ContributionModel';
 import { useAuth } from '../Auth/AuthContext';
 import Modal from '../UI/Modal';
@@ -23,6 +23,7 @@ const ContributionList = ({ isSecretary }) => {
   const [editData, setEditData] = useState(null);
   const [showProofForm, setShowProofForm] = useState(false);
   const [viewingProof, setViewingProof] = useState(null);
+  const [showOnlyPendingForMe, setShowOnlyPendingForMe] = useState(false);
 
   const { user, accountRole, canValidateContribution } = useAuth();
   // Le membre réellement connecté, pour qu'il ne puisse importer une
@@ -31,6 +32,21 @@ const ContributionList = ({ isSecretary }) => {
     () => members.find((m) => m.accountId === user?.id),
     [members, user]
   );
+
+  // Membres ayant au moins une cotisation avec preuve encore en attente du
+  // vote de l'utilisateur connecté (secrétaire, trésorier ou président).
+  const memberIdsPendingForMe = useMemo(() => {
+    if (!canValidateContribution) return new Set();
+    return new Set(
+      contributions
+        .filter((c) => c.status === 'pending' && c.proofImage && !c.validations?.[accountRole]?.validated)
+        .map((c) => c.memberId)
+    );
+  }, [contributions, accountRole, canValidateContribution]);
+
+  const visibleMembers = showOnlyPendingForMe
+    ? members.filter((m) => memberIdsPendingForMe.has(m.accountId))
+    : members;
 
   const loadData = useCallback(async () => {
     setMembers(MemberController.getAllMembers());
@@ -112,6 +128,17 @@ const ContributionList = ({ isSecretary }) => {
     }
   };
 
+  const handleUnvalidateContribution = async (contribution) => {
+    if (!window.confirm('Annuler votre validation pour cette cotisation ?')) return;
+    const result = await ContributionController.unvalidateContribution(contribution.id);
+    if (result.success) {
+      await loadData();
+      setViewingProof(result.contribution);
+    } else {
+      alert(result.error || "Erreur lors de l'annulation de la validation");
+    }
+  };
+
   const handleDeleteContribution = async (contribution) => {
     const member = members.find((m) => m.accountId === contribution.memberId);
     if (!window.confirm(`Supprimer la cotisation de ${member?.name || 'ce membre'} pour ${MONTHS_FULL[contribution.month] || contribution.month} (${contribution.amount.toLocaleString('fr-FR')} FCFA) ?`)) {
@@ -132,6 +159,18 @@ const ContributionList = ({ isSecretary }) => {
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="font-playfair text-2xl font-bold text-navy">Bulletin des cotisations</h2>
         <div className="flex items-center gap-3">
+          {canValidateContribution && (
+            <button
+              onClick={() => setShowOnlyPendingForMe((v) => !v)}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg font-medium border transition-colors ${
+                showOnlyPendingForMe
+                  ? 'bg-navy text-white border-navy'
+                  : 'bg-white text-navy border-navy/15 shadow-sm hover:bg-gray-50'
+              }`}
+            >
+              <Filter size={18} /> À valider{memberIdsPendingForMe.size > 0 ? ` (${memberIdsPendingForMe.size})` : ''}
+            </button>
+          )}
           {currentMember && (
             <button
               onClick={() => setShowProofForm(true)}
@@ -162,16 +201,20 @@ const ContributionList = ({ isSecretary }) => {
         </p>
       </div>
 
-      <ContributionTable
-        contributions={contributions}
-        members={members}
-        isSecretary={isSecretary}
-        canValidate={canValidateContribution}
-        currentMemberId={currentMember?.accountId}
-        onEditContribution={(c) => { setEditData(c); setShowForm(true); }}
-        onDeleteContribution={handleDeleteContribution}
-        onViewProof={setViewingProof}
-      />
+      {showOnlyPendingForMe && visibleMembers.length === 0 ? (
+        <div className="card text-center py-12 text-gray-400">Aucune cotisation n'attend votre validation.</div>
+      ) : (
+        <ContributionTable
+          contributions={contributions}
+          members={visibleMembers}
+          isSecretary={isSecretary}
+          canValidate={canValidateContribution}
+          currentMemberId={currentMember?.accountId}
+          onEditContribution={(c) => { setEditData(c); setShowForm(true); }}
+          onDeleteContribution={handleDeleteContribution}
+          onViewProof={setViewingProof}
+        />
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {Object.keys(monthlyTotals).map(month => {
@@ -240,7 +283,14 @@ const ContributionList = ({ isSecretary }) => {
 
             <div className="flex justify-end gap-3">
               <button onClick={() => setViewingProof(null)} className="btn-outline">Fermer</button>
-              {canValidateContribution && viewingProof.status !== 'paid' && !viewingProof.validations?.[accountRole]?.validated && (
+              {canValidateContribution && viewingProof.validations?.[accountRole]?.validated ? (
+                <button
+                  onClick={() => handleUnvalidateContribution(viewingProof)}
+                  className="border border-red-200 text-red-600 px-4 py-2 rounded-lg font-medium hover:bg-red-50 transition-colors"
+                >
+                  Annuler ma validation
+                </button>
+              ) : canValidateContribution && (
                 <button onClick={() => handleValidateContribution(viewingProof)} className="btn-primary">
                   Valider en tant que {ROLE_LABELS[accountRole]}
                 </button>

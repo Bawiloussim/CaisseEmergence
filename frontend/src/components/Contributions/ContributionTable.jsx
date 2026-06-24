@@ -104,9 +104,9 @@ const ContributionTable = ({
                                 <button
                                   onClick={() => onViewProof && onViewProof(contrib)}
                                   title="Voir la preuve de paiement"
-                                  className="text-xs text-navy/80 hover:underline inline-flex items-center gap-1"
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-gold/15 text-navy text-xs font-semibold hover:bg-gold/25 active:bg-gold/30 transition-colors"
                                 >
-                                  <ImageIcon size={12} /> Preuve
+                                  <ImageIcon size={14} /> Preuve
                                 </button>
                               )}
                               {isSecretary && (

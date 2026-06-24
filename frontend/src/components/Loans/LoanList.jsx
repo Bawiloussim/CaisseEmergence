@@ -107,7 +107,7 @@ const LoanList = ({ isSecretary }) => {
         console.error('Erreur génération contrat PDF', err);
       }
       try {
-        PDFService.generateLoanForm(member, StorageService.getSettings(), result.loan);
+        PDFService.generateLoanForm(member, result.loan);
         alert('Demande enregistrée — contrat et formulaire PDF générés.');
       } catch (err) {
         console.error('Erreur génération formulaire prêt', err);
@@ -276,7 +276,7 @@ const LoanList = ({ isSecretary }) => {
                                   </>
                                 );
                               })()}
-                              <button onClick={() => PDFService.generateLoanForm(member, StorageService.getSettings(), loan)} className="px-3 py-1 bg-white text-navy border rounded">Générer formulaire</button>
+                              <button onClick={() => PDFService.generateLoanForm(member, loan)} className="px-3 py-1 bg-white text-navy border rounded">Générer formulaire</button>
                             </>
                           )}
 

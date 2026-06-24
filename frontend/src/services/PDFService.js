@@ -1,6 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import reportLogo from '../assets/logo/2.jpeg';
 
 class PDFService {
   formatCurrency(amount) {
@@ -22,7 +23,9 @@ class PDFService {
       .replace(/[\u2013\u2014]/g, '-');   // tirets longs -> tiret simple
   }
 
-  addHeader(doc, title, logo = null) {
+  // Logo de marque affiché sur chaque PDF généré (rapports, contrats, etc.) ;
+  // `logo` ne sert qu'à le remplacer ponctuellement si besoin.
+  addHeader(doc, title, logo = reportLogo) {
     const pageWidth = doc.internal.pageSize.getWidth();
     // header background
     doc.setFillColor(13, 35, 64); // var(--navy)
@@ -51,10 +54,11 @@ class PDFService {
     const dateWidth = doc.getTextWidth(dateText);
     doc.text(dateText, pageWidth - dateWidth - 14, 34);
 
-    // logo (optional)
+    // logo (optionnel) — image large (16:9), on garde son ratio pour éviter
+    // toute déformation visible dans l'en-tête.
     if (logo) {
       try {
-        doc.addImage(logo, 'PNG', pageWidth - 52, 6, 40, 32);
+        doc.addImage(logo, 'JPEG', pageWidth - 50, 10, 42, 23.6);
       } catch {
         // ignore image errors
       }
@@ -216,7 +220,7 @@ class PDFService {
   // ===== CONTRAT DE PRÊT (signé / récapitulatif) =====
   generateLoanContract(loan, member, settings = {}) {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const headerH = this.addHeader(doc, 'CONTRAT DE PRÊT', settings.logo);
+    const headerH = this.addHeader(doc, 'CONTRAT DE PRÊT');
 
     doc.setFontSize(13);
     doc.setTextColor(13, 35, 64);
@@ -279,9 +283,9 @@ class PDFService {
   }
 
   // ===== FORMULAIRE VIERGE (impression) =====
-  generateLoanForm(member = null, settings = {}, loan = null) {
+  generateLoanForm(member = null, loan = null) {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    const headerH = this.addHeader(doc, 'FORMULAIRE DE DEMANDE DE PRÊT', settings.logo);
+    const headerH = this.addHeader(doc, 'FORMULAIRE DE DEMANDE DE PRÊT');
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);

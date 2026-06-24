@@ -5,7 +5,6 @@ import MemberQRCard from './MemberQRCard';
 import ContributionController from '../../controllers/ContributionController';
 import { MONTHS, MONTHS_FULL } from '../../models/ContributionModel';
 import PDFService from '../../services/PDFService';
-import StorageService from '../../services/StorageService';
 
 const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onRequestLoan, onResendInvitation, canRequestLoan }) => {
   const [showQRCard, setShowQRCard] = useState(false);
@@ -178,8 +177,7 @@ const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onReques
               <button
                 onClick={() => {
                   try {
-                    const settings = StorageService.getSettings();
-                    PDFService.generateLoanForm(member, settings);
+                    PDFService.generateLoanForm(member);
                   } catch (err) {
                     console.error('Erreur génération formulaire prêt', err);
                     alert('Erreur lors de la génération du formulaire');

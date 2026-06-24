@@ -137,7 +137,7 @@ const MemberList = ({ isSecretary }) => {
         console.error('Erreur génération contrat PDF', err);
       }
       try {
-        PDFService.generateLoanForm(member, StorageService.getSettings(), result.loan);
+        PDFService.generateLoanForm(member, result.loan);
         alert('Demande de prêt enregistrée — contrat et formulaire PDF générés.');
       } catch (err) {
         console.error('Erreur génération formulaire prêt', err);

@@ -1,7 +1,7 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
-import reportLogo from '../assets/logo/2.jpeg';
+import reportLogo from '../assets/logo/1.jpeg';
 
 class PDFService {
   formatCurrency(amount) {

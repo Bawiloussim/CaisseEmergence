@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from './AuthContext';
 import ForgotPasswordModal from './ForgotPasswordModal';
-import logo from '../../assets/logo/2.jpeg';
+import logo from '../../assets/logo/1.jpeg';
 
 /* ── Login modal ─────────────────────────────────────── */
 function LoginModal({ onClose, onForgotPassword }) {

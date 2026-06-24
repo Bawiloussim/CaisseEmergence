@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Eye, EyeOff, Lock, Mail } from 'lucide-react';
 import { useAuth } from './AuthContext';
-import logo from '../../assets/logo/2.jpeg';
+import logo from '../../assets/logo/1.jpeg';
 
 const LoginPage = () => {
   const { login } = useAuth();

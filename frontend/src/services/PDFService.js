@@ -54,11 +54,11 @@ class PDFService {
     const dateWidth = doc.getTextWidth(dateText);
     doc.text(dateText, pageWidth - dateWidth - 14, 34);
 
-    // logo (optionnel) — image large (16:9), on garde son ratio pour éviter
-    // toute déformation visible dans l'en-tête.
+    // logo (optionnel) — petit et placé en haut à droite, hors de la zone
+    // du titre/de la date (qui restent sur la ligne y=34).
     if (logo) {
       try {
-        doc.addImage(logo, 'JPEG', pageWidth - 50, 10, 42, 23.6);
+        doc.addImage(logo, 'JPEG', pageWidth - 32, 4, 24, 13.5);
       } catch {
         // ignore image errors
       }

@@ -6,6 +6,7 @@ export class MemberModel {
     this.phone = data.phone || '';
     this.cni = data.cni || '';
     this.dob = data.dob || '';
+    this.birthday = data.birthday || ''; // date à fêter, distincte de dob (CNI)
     this.joinDate = data.joinDate || new Date().toISOString().split('T')[0];
     this.address = data.address || '';
     this.monthlyContribution = Number(data.monthlyContribution) || 2000;
@@ -34,6 +35,7 @@ export class MemberModel {
       phone: this.phone,
       cni: this.cni,
       dob: this.dob,
+      birthday: this.birthday,
       joinDate: this.joinDate,
       address: this.address,
       monthlyContribution: this.monthlyContribution,

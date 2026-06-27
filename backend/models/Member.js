@@ -36,7 +36,12 @@ const memberSchema = new mongoose.Schema(
     role: { type: String, default: 'Membre actif' }, // titre/fonction dans l'association
     phone: { type: String, default: '' },
     cni: { type: String, default: '' },
+    // Date de naissance "officielle" (état civil/CNI).
     dob: { type: String, default: '' },
+    // Date à utiliser pour les célébrations d'anniversaire dans l'app :
+    // distincte de `dob` car certains membres n'utilisent pas leur vraie
+    // date de naissance sur leur carte d'identité.
+    birthday: { type: String, default: '' },
     joinDate: {
       type: String,
       default: () => new Date().toISOString().split('T')[0],

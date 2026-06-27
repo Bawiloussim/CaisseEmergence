@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Cake, X } from 'lucide-react';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import { useAuth } from './components/Auth/AuthContext';
@@ -30,6 +31,17 @@ function AppContent() {
   const { showToast } = useToast();
   const { unreadCount: unreadChatCount } = useChat();
   const [pendingProofCount, setPendingProofCount] = useState(0);
+  const [birthdaysToday, setBirthdaysToday] = useState([]);
+  const [birthdayBannerDismissed, setBirthdayBannerDismissed] = useState(false);
+
+  // Bannière "joyeux anniversaire" visible par tous les membres le jour J
+  // (en plus de l'email envoyé par la tâche planifiée, voir backend).
+  useEffect(() => {
+    if (!user) return;
+    MemberController.getTodaysBirthdays()
+      .then(setBirthdaysToday)
+      .catch((err) => console.error('Échec de la récupération des anniversaires du jour', err));
+  }, [user]);
 
   // Compte les cotisations avec preuve importée par un membre et que
   // l'utilisateur connecté (secrétaire, trésorier ou président) n'a pas
@@ -123,6 +135,22 @@ function AppContent() {
         settings={settings}
         onUpdateSettings={updateSettings}
       />
+      {!birthdayBannerDismissed && birthdaysToday.length > 0 && (
+        <div className="bg-gold/15 border-b border-gold/30 px-10 py-2.5 flex items-center justify-center gap-2 text-sm text-navy font-medium relative">
+          <Cake size={16} className="text-gold shrink-0" />
+          <span>
+            🎉 Aujourd'hui, c'est l'anniversaire de{' '}
+            <strong>{birthdaysToday.map((m) => m.name).join(', ')}</strong> ! Pensez à lui/leur souhaiter un joyeux anniversaire.
+          </span>
+          <button
+            onClick={() => setBirthdayBannerDismissed(true)}
+            className="absolute right-3 text-navy/50 hover:text-navy"
+            aria-label="Fermer"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
       <Navigation
         activeTab={activeTab}
         onTabChange={setActiveTab}

@@ -1,0 +1,23 @@
+name: Birthday reminder
+
+# Render (plan gratuit) n'a pas de tâche planifiée interne : ce workflow
+# appelle une fois par jour POST /api/members/birthdays/notify, qui envoie
+# un email "joyeux anniversaire" à tous les membres si c'est l'anniversaire
+# de quelqu'un. Nécessite le secret de dépôt CRON_SECRET (même valeur que
+# CRON_SECRET côté backend/.env sur Render) et optionnellement la variable
+# BACKEND_URL si l'URL du backend diffère de la valeur par défaut.
+on:
+  schedule:
+    # 7h00 UTC ≈ 7h00 à Lomé (UTC+0) ; ajustez l'heure si besoin.
+    - cron: '0 7 * * *'
+  workflow_dispatch: {}
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Appeler l'endpoint d'anniversaires
+        run: |
+          curl --fail --silent --show-error --max-time 90 \
+            -X POST "${{ vars.BACKEND_URL || 'https://caisse-emergence-backend.onrender.com' }}/api/members/birthdays/notify" \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}"

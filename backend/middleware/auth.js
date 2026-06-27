@@ -56,4 +56,17 @@ const requireValidator = (req, res, next) => {
   next();
 };
 
-module.exports = { protect, requireSecretary, requireValidator };
+/**
+ * À utiliser SANS `protect` : pour les routes appelées par une tâche
+ * planifiée externe (ex: GitHub Actions) qui n'a pas de session membre.
+ * Vérifie un secret partagé envoyé dans l'en-tête X-Cron-Secret.
+ */
+const requireCronSecret = (req, res, next) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.headers['x-cron-secret'] !== secret) {
+    return res.status(401).json({ message: 'Non autorisé' });
+  }
+  next();
+};
+
+module.exports = { protect, requireSecretary, requireValidator, requireCronSecret };

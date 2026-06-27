@@ -248,3 +248,63 @@ describe('POST /api/members/:id/resend-invitation', () => {
     expect(res.status).toBe(404);
   });
 });
+
+describe('GET /api/members/birthdays/today', () => {
+  it("retourne uniquement les membres dont l'anniversaire est aujourd'hui", async () => {
+    const token = await createSecretaryToken();
+    const today = new Date();
+    const todayStr = `2000-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    await Member.create({ name: 'Fêté', email: 'fete@example.com', password: 'secret123', birthday: todayStr });
+    await Member.create({ name: 'Pas fêté', email: 'pasfete@example.com', password: 'secret123', birthday: '2000-01-01' });
+
+    const res = await request(app)
+      .get('/api/members/birthdays/today')
+      .set('Authorization', `Bearer ${token}`);
+
+    expect(res.status).toBe(200);
+    expect(res.body).toHaveLength(1);
+    expect(res.body[0].name).toBe('Fêté');
+  });
+});
+
+describe('POST /api/members/birthdays/notify', () => {
+  const originalSecret = process.env.CRON_SECRET;
+  beforeAll(() => { process.env.CRON_SECRET = 'test-cron-secret'; });
+  afterAll(() => { process.env.CRON_SECRET = originalSecret; });
+
+  it('refuse une requête sans le bon secret', async () => {
+    const res = await request(app)
+      .post('/api/members/birthdays/notify')
+      .set('X-Cron-Secret', 'mauvais-secret');
+
+    expect(res.status).toBe(401);
+  });
+
+  it("ne tente aucun envoi si personne n'a anniversaire aujourd'hui", async () => {
+    await Member.create({ name: 'Membre', email: 'membre@example.com', password: 'secret123', birthday: '2000-01-01' });
+
+    const res = await request(app)
+      .post('/api/members/birthdays/notify')
+      .set('X-Cron-Secret', 'test-cron-secret');
+
+    expect(res.status).toBe(200);
+    expect(res.body.celebrants).toEqual([]);
+    expect(res.body.sent).toBe(0);
+  });
+
+  it("identifie le(s) fêté(s) du jour et tente d'envoyer aux autres membres", async () => {
+    const today = new Date();
+    const todayStr = `2000-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    await Member.create({ name: 'Fêté', email: 'fete@example.com', password: 'secret123', birthday: todayStr });
+    await Member.create({ name: 'Collègue', email: 'collegue@example.com', password: 'secret123' });
+
+    const res = await request(app)
+      .post('/api/members/birthdays/notify')
+      .set('X-Cron-Secret', 'test-cron-secret');
+
+    expect(res.status).toBe(200);
+    expect(res.body.celebrants).toEqual(['Fêté']);
+    // Pas de BREVO_API_KEY en test : l'envoi échoue mais l'endpoint répond bien.
+    expect(res.body.failed.length).toBeGreaterThan(0);
+  });
+});

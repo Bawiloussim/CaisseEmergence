@@ -98,6 +98,10 @@ const MemberDetail = ({ member, onClose, onDelete, onEdit, isSecretary, onReques
             <Cake size={16} className="text-gray-400" />
             <span>Né(e) le: {member.dob || 'Non renseigné'}</span>
           </div>
+          <div className="flex items-center gap-3 text-sm">
+            <Cake size={16} className="text-gray-400" />
+            <span>Anniversaire fêté le: {member.birthday || 'Non renseigné'}</span>
+          </div>
         </div>
 
         {/* Calendrier des cotisations */}

@@ -10,6 +10,7 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
     phone: editingMember?.phone || '',
     cni: editingMember?.cni || '',
     dob: editingMember?.dob || '',
+    birthday: editingMember?.birthday || '',
     joinDate: editingMember?.joinDate || new Date().toISOString().split('T')[0],
     address: editingMember?.address || '',
     monthlyContribution: editingMember?.monthlyContribution || 2000,
@@ -212,7 +213,7 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Date de naissance</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date de naissance (CNI)</label>
             <input
               type="date"
               name="dob"
@@ -220,6 +221,20 @@ const MemberForm = ({ onClose, onSubmit, editingMember }) => {
               onChange={handleChange}
               className="input"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Date d'anniversaire (à fêter)</label>
+            <input
+              type="date"
+              name="birthday"
+              value={formData.birthday}
+              onChange={handleChange}
+              className="input"
+            />
+            <p className="text-xs text-gray-400 mt-1">
+              Utilisée pour l'alerte anniversaire aux autres membres — utile si elle diffère de la date sur la CNI.
+            </p>
           </div>
 
           <div>

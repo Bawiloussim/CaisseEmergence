@@ -143,4 +143,37 @@ function contributionValidationNeededEmail({ name, memberName, month, amount, as
   </div>`;
 }
 
-module.exports = { invitationEmail, meetingReminderEmail, resetCodeEmail, contributionValidationNeededEmail };
+/**
+ * Envoyé à chaque membre (sauf le fêté) le jour de l'anniversaire d'un
+ * membre, pour l'inviter à lui souhaiter un joyeux anniversaire.
+ */
+function birthdayEmail({ name, celebrantName, associationName, loginUrl }) {
+  return `
+  <div style="font-family: Arial, Helvetica, sans-serif; max-width: 480px; margin: 0 auto; color: #1f2a24;">
+    <h2 style="color:#09324e; margin-bottom: 4px;">${associationName}</h2>
+    <p style="color:#8a978f; margin-top:0; letter-spacing:1px; font-size:12px; text-transform:uppercase;">
+      Épargne · Crédit · Solidarité
+    </p>
+
+    <p>Bonjour ${name},</p>
+    <p>
+      🎉 Aujourd'hui, c'est l'anniversaire de <strong>${celebrantName}</strong> !
+      Pensez à lui souhaiter un joyeux anniversaire.
+    </p>
+
+    <p style="margin: 24px 0;">
+      <a href="${loginUrl}"
+         style="background:#c48a21; color:#072434; padding:12px 24px; border-radius:9999px; text-decoration:none; font-weight:bold; display:inline-block;">
+        Ouvrir l'application
+      </a>
+    </p>
+  </div>`;
+}
+
+module.exports = {
+  invitationEmail,
+  meetingReminderEmail,
+  resetCodeEmail,
+  contributionValidationNeededEmail,
+  birthdayEmail,
+};

@@ -4,7 +4,7 @@ const Loan = require('../models/Loan');
 const Aid = require('../models/Aid');
 const generateTempPassword = require('../utils/generatePassword');
 const sendEmail = require('../utils/sendEmail');
-const { invitationEmail } = require('../utils/emailTemplates');
+const { invitationEmail, birthdayEmail } = require('../utils/emailTemplates');
 const logAction = require('../utils/logAction');
 const { ACCOUNT_ROLES, VALIDATOR_ROLES } = require('../constants/roles');
 
@@ -23,6 +23,60 @@ const getMemberById = async (req, res) => {
   res.json(member);
 };
 
+// GET /api/members/birthdays/today — accessible à tout membre connecté.
+// `birthday` est stocké en chaîne 'YYYY-MM-DD' (voir Member.js) : on compare
+// juste le mois/jour pour savoir si c'est l'anniversaire de quelqu'un.
+const getTodaysBirthdays = async (req, res) => {
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const members = await Member.find({ birthday: { $regex: `-${mm}-${dd}$` } }, 'name birthday');
+  res.json(members);
+};
+
+// POST /api/members/birthdays/notify — protégé par un secret partagé
+// (en-tête X-Cron-Secret), pas par une session membre : appelé une fois par
+// jour par une tâche planifiée externe (GitHub Actions), l'hébergement
+// (Render, plan gratuit) n'ayant pas de cron interne. Envoie un email à
+// tous les membres sauf le(s) fêté(s) du jour.
+const notifyBirthdays = async (req, res) => {
+  const today = new Date();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  const celebrants = await Member.find({ birthday: { $regex: `-${mm}-${dd}$` } });
+
+  if (!celebrants.length) {
+    return res.json({ celebrants: [], sent: 0, failed: [] });
+  }
+
+  const allMembers = await Member.find();
+  let sent = 0;
+  const failed = [];
+
+  for (const celebrant of celebrants) {
+    const recipients = allMembers.filter((m) => String(m._id) !== String(celebrant._id));
+    for (const recipient of recipients) {
+      try {
+        await sendEmail({
+          to: recipient.email,
+          subject: `🎉 Joyeux anniversaire à ${celebrant.name} !`,
+          html: birthdayEmail({
+            name: recipient.name,
+            celebrantName: celebrant.name,
+            associationName: process.env.ASSOCIATION_NAME || 'La Caisse Emergence',
+            loginUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
+          }),
+        });
+        sent += 1;
+      } catch (err) {
+        failed.push({ name: recipient.name, email: recipient.email, error: err.message });
+      }
+    }
+  }
+
+  res.json({ celebrants: celebrants.map((c) => c.name), sent, failed });
+};
+
 /**
  * POST /api/members — secrétaire uniquement
  * Crée le membre avec un mot de passe temporaire et lui envoie un
@@ -35,6 +89,7 @@ const createMember = async (req, res) => {
     phone,
     cni,
     dob,
+    birthday,
     address,
     monthlyContribution,
     momoNumber,
@@ -63,6 +118,7 @@ const createMember = async (req, res) => {
     phone,
     cni,
     dob,
+    birthday,
     address,
     momoNumber,
     photo,
@@ -162,6 +218,7 @@ const updateMember = async (req, res) => {
     'phone',
     'cni',
     'dob',
+    'birthday',
     'address',
     'monthlyContribution',
     'momoNumber',
@@ -230,4 +287,13 @@ const deleteMember = async (req, res) => {
   res.json({ message: 'Membre supprimé' });
 };
 
-module.exports = { getMembers, getMemberById, createMember, updateMember, deleteMember, resendInvitation };
+module.exports = {
+  getMembers,
+  getMemberById,
+  getTodaysBirthdays,
+  notifyBirthdays,
+  createMember,
+  updateMember,
+  deleteMember,
+  resendInvitation,
+};

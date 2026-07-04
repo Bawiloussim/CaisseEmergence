@@ -18,6 +18,19 @@ jobs:
     steps:
       - name: Appeler l'endpoint d'anniversaires
         run: |
-          curl --fail --silent --show-error --max-time 90 \
-            -X POST "${{ vars.BACKEND_URL || 'https://caisse-emergence-backend.onrender.com' }}/api/members/birthdays/notify" \
-            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}"
+          BACKEND="${{ vars.BACKEND_URL }}"
+          BACKEND="${BACKEND:-https://caisse-emergence-backend.onrender.com}"
+          echo "→ POST $BACKEND/api/members/birthdays/notify"
+          HTTP_CODE=$(curl --silent --show-error --max-time 90 --write-out "%{http_code}" \
+            -X POST "$BACKEND/api/members/birthdays/notify" \
+            -H "X-Cron-Secret: ${{ secrets.CRON_SECRET }}" \
+            -H "Content-Type: application/json" \
+            -o /tmp/response.json)
+          cat /tmp/response.json || true
+          echo ""
+          echo "HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" -lt 200 ] || [ "$HTTP_CODE" -ge 300 ]; then
+            echo "❌ Échec : code HTTP $HTTP_CODE"
+            exit 1
+          fi
+          echo "✅ Succès"

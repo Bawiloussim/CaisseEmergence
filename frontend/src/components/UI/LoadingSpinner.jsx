@@ -1,71 +1,124 @@
 import { useEffect, useRef } from 'react';
 
 /**
- * Spinner de chargement animé avec canvas.
- * Affiche deux anneaux concentriques qui tournent en sens opposés
- * aux couleurs de la marque (or / marine), plus un point central pulsant.
- *
- * @param {string} label  - Texte affiché sous le spinner (ex. "Chargement…")
- * @param {number} size   - Taille du canvas en px (défaut 72)
+ * Spinner orbital canvas : sphère dorée animée sur fond sombre avec
+ * graines dispersées — inspiré du style NovaBulletin.
  */
-const LoadingSpinner = ({ label = 'Chargement…', size = 72 }) => {
+const LoadingSpinner = ({ label = 'Chargement…' }) => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
-    const r = size / 2;
     let animId;
     let t = 0;
+    let seeds = [];
 
-    function draw() {
-      t += 0.035;
-      ctx.clearRect(0, 0, size, size);
+    function init() {
+      canvas.width  = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      const W = canvas.width, H = canvas.height;
 
-      // Anneau extérieur — or, tourne dans le sens horaire
-      const gapOuter = Math.PI * 0.35;
-      ctx.beginPath();
-      ctx.arc(r, r, r - 4, t, t + Math.PI * 2 - gapOuter);
-      ctx.strokeStyle = '#c48a21';
-      ctx.lineWidth = 4;
-      ctx.lineCap = 'round';
-      ctx.stroke();
-
-      // Anneau intérieur — marine, tourne en sens inverse
-      const gapInner = Math.PI * 0.5;
-      ctx.beginPath();
-      ctx.arc(r, r, r - 13, -t * 1.4, -t * 1.4 + Math.PI * 2 - gapInner);
-      ctx.strokeStyle = '#09324e';
-      ctx.lineWidth = 3.5;
-      ctx.lineCap = 'round';
-      ctx.stroke();
-
-      // Point central pulsant
-      const pulse = 0.5 + 0.5 * Math.sin(t * 3);
-      const pr = 3 + pulse * 2;
-      ctx.beginPath();
-      ctx.arc(r, r, pr, 0, Math.PI * 2);
-      ctx.fillStyle = `rgba(196,138,33,${0.5 + pulse * 0.5})`;
-      ctx.fill();
-
-      animId = requestAnimationFrame(draw);
+      // Génération des graines (formes elliptiques dispersées)
+      seeds = [];
+      const n = Math.floor((W * H) / 1800);
+      for (let i = 0; i < n; i++) {
+        seeds.push({
+          x: Math.random() * W,
+          y: Math.random() * H,
+          angle: Math.random() * Math.PI,
+          rw: 1.5 + Math.random() * 1.5,
+          rh: 4 + Math.random() * 5,
+          a: 0.07 + Math.random() * 0.13,
+        });
+      }
     }
 
-    draw();
-    return () => cancelAnimationFrame(animId);
-  }, [size]);
+    function frame() {
+      const W = canvas.width, H = canvas.height;
+      t += 0.022;
+
+      // Fond sombre
+      ctx.fillStyle = '#091929';
+      ctx.fillRect(0, 0, W, H);
+
+      // Graines dispersées
+      for (const s of seeds) {
+        ctx.save();
+        ctx.translate(s.x, s.y);
+        ctx.rotate(s.angle);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, s.rw, s.rh, 0, 0, Math.PI * 2);
+        ctx.strokeStyle = `rgba(86,167,210,${s.a})`;
+        ctx.lineWidth = 0.9;
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      // ── Orbital ──────────────────────────────────────────────
+      const cx = W / 2;
+      const cy = H * 0.42;
+      const rx = Math.min(W * 0.3, 110);
+      const ry = rx * 0.38;
+
+      // Piste elliptique
+      ctx.save();
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      ctx.strokeStyle = 'rgba(196,138,33,0.22)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.restore();
+
+      // Position de la sphère sur l'ellipse
+      const sx = cx + Math.cos(t) * rx;
+      const sy = cy + Math.sin(t) * ry;
+
+      // Halo lumineux (glow)
+      const glow = ctx.createRadialGradient(sx, sy, 0, sx, sy, 30);
+      glow.addColorStop(0,   'rgba(255,140,30,0.85)');
+      glow.addColorStop(0.4, 'rgba(255,100,0,0.4)');
+      glow.addColorStop(1,   'rgba(255,60,0,0)');
+      ctx.beginPath();
+      ctx.arc(sx, sy, 30, 0, Math.PI * 2);
+      ctx.fillStyle = glow;
+      ctx.fill();
+
+      // Noyau de la sphère
+      const core = ctx.createRadialGradient(sx - 2, sy - 2, 1, sx, sy, 10);
+      core.addColorStop(0,   '#ffd060');
+      core.addColorStop(0.5, '#ff8c00');
+      core.addColorStop(1,   '#cc4400');
+      ctx.beginPath();
+      ctx.arc(sx, sy, 10, 0, Math.PI * 2);
+      ctx.fillStyle = core;
+      ctx.fill();
+
+      animId = requestAnimationFrame(frame);
+    }
+
+    init();
+    frame();
+
+    const obs = new ResizeObserver(init);
+    obs.observe(canvas);
+    return () => { cancelAnimationFrame(animId); obs.disconnect(); };
+  }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center gap-4 py-16">
+    <div className="relative w-full" style={{ minHeight: '55vh' }}>
       <canvas
         ref={canvasRef}
-        width={size}
-        height={size}
+        className="absolute inset-0 w-full h-full"
         aria-hidden="true"
+        style={{ borderRadius: '12px' }}
       />
       {label && (
-        <p className="text-sm font-medium animate-pulse" style={{ color: '#98afc0' }}>
+        <p
+          className="absolute left-1/2 -translate-x-1/2 text-sm font-medium"
+          style={{ bottom: '18%', color: '#98afc0', letterSpacing: '0.04em' }}
+        >
           {label}
         </p>
       )}

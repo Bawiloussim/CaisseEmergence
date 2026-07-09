@@ -3,11 +3,11 @@ import {
   Wallet, HandHeart, Users, HandCoins,
   Video, TrendingUp, Calendar,
 } from 'lucide-react';
-import MemberController from '../../controllers/MemberController';
 import ContributionController from '../../controllers/ContributionController';
 import SolidarityController from '../../controllers/SolidarityController';
 import MeetingFeedbackController from '../../controllers/MeetingFeedbackController';
 import LoanController from '../../controllers/LoanController';
+import api from '../../services/apiClient';
 import { useAuth } from '../Auth/AuthContext';
 import { CYCLE_MONTHS, CYCLE_MONTHS_FULL, getCurrentCycleMonth } from '../../utils/cycleMonth';
 import LoadingSpinner from '../UI/LoadingSpinner';
@@ -116,12 +116,12 @@ const Dashboard = ({ onNavigateToProgram }) => {
 
   useEffect(() => {
     (async () => {
-      const memberList = MemberController.getAllMembers();
-      const [allContribs, solidarity, feedback, loans] = await Promise.all([
+      const [allContribs, solidarity, feedback, loans, apiMembers] = await Promise.all([
         ContributionController.getAllContributions(),
         SolidarityController.getSolidarityFund(),
         MeetingFeedbackController.getAll(),
         LoanController.getAllLoans(),
+        api.get('/members'),
       ]);
 
       const paid         = allContribs.filter(c => c.status === 'paid');
@@ -133,12 +133,12 @@ const Dashboard = ({ onNavigateToProgram }) => {
         (s, l) => s + (l.repayments || []).filter(r => r.status === 'paid').reduce((a, r) => a + r.amount, 0), 0
       );
 
-      setMembers(memberList);
+      setMembers(apiMembers);
       setContribs(allContribs);
       setStats({
         totalCaisse,
         solidarityFund: solidarity.total,
-        memberCount: memberList.length,
+        memberCount: apiMembers.length,
         pendingPayments: pendingCount,
         totalLoans,
         availableAfterLoans: totalCaisse - totalLoans + totalRepaid,
@@ -173,10 +173,10 @@ const Dashboard = ({ onNavigateToProgram }) => {
     ? contribs.filter(c => c.month === currentMonth && c.status === 'paid').reduce((s, c) => s + c.amount, 0)
     : 0;
 
-  // Les contributions référencent le membre via memberId = accountId (MongoDB _id)
+  // L'API retourne les membres avec _id ; les contributions stockent memberId = ce même _id
   const memberMap = {};
   members.forEach(m => {
-    if (m.accountId) memberMap[m.accountId] = m;
+    if (m._id) memberMap[m._id] = m;
   });
   const dateStr   = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',

@@ -173,7 +173,11 @@ const Dashboard = ({ onNavigateToProgram }) => {
     ? contribs.filter(c => c.month === currentMonth && c.status === 'paid').reduce((s, c) => s + c.amount, 0)
     : 0;
 
-  const memberMap = Object.fromEntries(members.map(m => [m.id || m._id, m]));
+  const memberMap = {};
+  members.forEach(m => {
+    if (m.id)  memberMap[m.id]  = m;
+    if (m._id) memberMap[m._id] = m;
+  });
   const dateStr   = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
@@ -181,7 +185,7 @@ const Dashboard = ({ onNavigateToProgram }) => {
   return (
     <div
       className="-mx-4 sm:-mx-6 lg:-mx-8 -mt-6 sm:-mt-8 px-4 sm:px-6 lg:px-8 pt-6 sm:pt-8 pb-10"
-      style={{ background: '#060f1a', minHeight: 'calc(100vh - 60px)' }}
+      style={{ background: '#09324e', minHeight: 'calc(100vh - 60px)' }}
     >
 
       {/* ── En-tête ── */}

@@ -173,10 +173,10 @@ const Dashboard = ({ onNavigateToProgram }) => {
     ? contribs.filter(c => c.month === currentMonth && c.status === 'paid').reduce((s, c) => s + c.amount, 0)
     : 0;
 
+  // Les contributions référencent le membre via memberId = accountId (MongoDB _id)
   const memberMap = {};
   members.forEach(m => {
-    if (m.id)  memberMap[m.id]  = m;
-    if (m._id) memberMap[m._id] = m;
+    if (m.accountId) memberMap[m.accountId] = m;
   });
   const dateStr   = new Date().toLocaleDateString('fr-FR', {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',

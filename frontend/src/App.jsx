@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Cake, X } from 'lucide-react';
 import Header from './components/Layout/Header';
 import Footer from './components/Layout/Footer';
 import { useAuth } from './components/Auth/AuthContext';
@@ -24,52 +23,50 @@ import api from './services/apiClient';
 const PENDING_PROOF_POLL_MS = 30000;
 
 function AppContent() {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab]     = useState('dashboard');
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const { user, isSecretaire, accountRole, canValidateContribution, logout } = useAuth();
   const isSecretary = isSecretaire;
   const [settings, setSettings] = useState(() => StorageService.getSettings());
-  const { showToast } = useToast();
+  const { showToast }           = useToast();
   const { unreadCount: unreadChatCount } = useChat();
-  const [pendingProofCount, setPendingProofCount] = useState(0);
-  const [birthdaysToday, setBirthdaysToday] = useState([]);
+
+  const [pendingProofCount,       setPendingProofCount]       = useState(0);
+  const [birthdaysToday,          setBirthdaysToday]          = useState([]);
   const [birthdayBannerDismissed, setBirthdayBannerDismissed] = useState(false);
 
-  // Bannière "joyeux anniversaire" visible par tous les membres le jour J
-  // (en plus de l'email envoyé par la tâche planifiée, voir backend).
+  /* ── Anniversaires du jour ── */
   useEffect(() => {
     if (!user) return;
     MemberController.getTodaysBirthdays()
       .then(setBirthdaysToday)
-      .catch((err) => console.error('Échec de la récupération des anniversaires du jour', err));
+      .catch(err => console.error('Échec de la récupération des anniversaires du jour', err));
   }, [user]);
 
-  // Compte les cotisations avec preuve importée par un membre et que
-  // l'utilisateur connecté (secrétaire, trésorier ou président) n'a pas
-  // encore validées lui-même, pour afficher un badge ciblé.
+  /* ── Badge cotisations en attente de validation ── */
   useEffect(() => {
     if (!user || !canValidateContribution) return;
 
-    const loadPendingProofCount = async () => {
+    const load = async () => {
       try {
         const contributions = await ContributionController.getAllContributions();
         setPendingProofCount(
           contributions.filter(
-            (c) => c.status === 'pending' && c.proofImage && !c.validations?.[accountRole]?.validated
+            c => c.status === 'pending' && c.proofImage && !c.validations?.[accountRole]?.validated
           ).length
         );
       } catch (err) {
-        console.error('Échec du comptage des preuves de paiement en attente', err);
+        console.error('Échec du comptage des preuves en attente', err);
       }
     };
 
-    loadPendingProofCount();
-    const interval = setInterval(loadPendingProofCount, PENDING_PROOF_POLL_MS);
-    return () => clearInterval(interval);
+    load();
+    const id = setInterval(load, PENDING_PROOF_POLL_MS);
+    return () => clearInterval(id);
   }, [user, accountRole, canValidateContribution]);
 
-  // Synchronise la liste des membres puis migre une fois pour toutes les
-  // cotisations/prêts/aides qui ne vivaient jusqu'ici que dans le
-  // navigateur du secrétaire, pour qu'elles deviennent visibles par tous.
+  /* ── Synchronisation membres + migration locale ── */
   useEffect(() => {
     if (!user) return;
     (async () => {
@@ -102,65 +99,66 @@ function AppContent() {
   };
 
   const renderContent = () => {
-    switch(activeTab) {
-      case 'dashboard':
-        return <Dashboard isSecretary={isSecretary} onNavigateToProgram={() => setActiveTab('program')} />;
-      case 'members':
-        return <MemberList isSecretary={isSecretary} />;
-      case 'contributions':
-        return <ContributionList isSecretary={isSecretary} />;
-      case 'loans':
-        return <LoanList isSecretary={isSecretary} />;
-      case 'solidarity':
-        return <Solidarity isSecretary={isSecretary} />;
-      case 'statistics':
-        return <Statistics />;
-      case 'reports':
-        return <Reports />;
-      case 'program':
-        return <Program isSecretary={isSecretary} />;
-      case 'chat':
-        return <Chat />;
-      default:
-        return <Dashboard isSecretary={isSecretary} onNavigateToProgram={() => setActiveTab('program')} />;
+    switch (activeTab) {
+      case 'dashboard':     return <Dashboard isSecretary={isSecretary} onNavigateToProgram={() => setActiveTab('program')} />;
+      case 'members':       return <MemberList isSecretary={isSecretary} />;
+      case 'contributions': return <ContributionList isSecretary={isSecretary} />;
+      case 'loans':         return <LoanList isSecretary={isSecretary} />;
+      case 'solidarity':    return <Solidarity isSecretary={isSecretary} />;
+      case 'statistics':    return <Statistics />;
+      case 'reports':       return <Reports />;
+      case 'program':       return <Program isSecretary={isSecretary} />;
+      case 'chat':          return <Chat />;
+      default:              return <Dashboard isSecretary={isSecretary} onNavigateToProgram={() => setActiveTab('program')} />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-cream flex flex-col">
-      <Header 
-        isSecretary={isSecretary} 
-        user={user}
-        onLogout={handleLogout}
-        settings={settings}
-        onUpdateSettings={updateSettings}
-      />
-      {!birthdayBannerDismissed && birthdaysToday.length > 0 && (
-        <div className="bg-gold/15 border-b border-gold/30 px-10 py-2.5 flex items-center justify-center gap-2 text-sm text-navy font-medium relative">
-          <Cake size={16} className="text-gold shrink-0" />
-          <span>
-            🎉 Aujourd'hui, c'est l'anniversaire de{' '}
-            <strong>{birthdaysToday.map((m) => m.name).join(', ')}</strong> ! Pensez à lui/leur souhaiter un joyeux anniversaire.
-          </span>
-          <button
-            onClick={() => setBirthdayBannerDismissed(true)}
-            className="absolute right-3 text-navy/50 hover:text-navy"
-            aria-label="Fermer"
-          >
-            <X size={16} />
-          </button>
-        </div>
-      )}
+    /*
+     * Layout global :
+     *   [Sidebar fixe 240px] [Colonne principale flex-1]
+     *                            ├── TopBar (sticky)
+     *                            └── main (scrollable)
+     */
+    <div className="flex h-screen overflow-hidden bg-cream">
+
+      {/* ── Sidebar (desktop fixe + mobile tiroir) ── */}
       <Navigation
         activeTab={activeTab}
         onTabChange={setActiveTab}
         unreadChatCount={unreadChatCount}
         pendingContributionCount={pendingProofCount}
+        user={user}
+        settings={settings}
+        onLogout={handleLogout}
+        mobileOpen={sidebarOpen}
+        onMobileClose={() => setSidebarOpen(false)}
       />
-      <main className="container-wide px-4 sm:px-6 lg:px-8 py-6 sm:py-8 flex-1">
-        {renderContent()}
-      </main>
-      <Footer settings={settings} />
+
+      {/* ── Colonne droite (décalée de 240px sur desktop) ── */}
+      <div className="flex flex-col flex-1 overflow-hidden md:ml-60">
+
+        {/* Top bar + bannière anniversaire */}
+        <Header
+          isSecretary={isSecretary}
+          user={user}
+          onLogout={handleLogout}
+          settings={settings}
+          onUpdateSettings={updateSettings}
+          activeTab={activeTab}
+          onMenuToggle={() => setSidebarOpen(v => !v)}
+          birthdaysToday={birthdaysToday}
+          birthdayBannerDismissed={birthdayBannerDismissed}
+          onDismissBirthday={() => setBirthdayBannerDismissed(true)}
+        />
+
+        {/* Contenu scrollable */}
+        <main className="flex-1 overflow-y-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+          {renderContent()}
+        </main>
+
+        <Footer settings={settings} />
+      </div>
     </div>
   );
 }

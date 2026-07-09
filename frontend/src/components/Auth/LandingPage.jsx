@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import {
   Eye, EyeOff, Lock, Mail, X, TrendingUp, HandCoins, Users, ShieldCheck,
   ChevronLeft, ChevronRight, Sparkles, Phone, MapPin, Menu,
@@ -6,6 +6,93 @@ import {
 import { useAuth } from './AuthContext';
 import ForgotPasswordModal from './ForgotPasswordModal';
 import logo from '../../assets/logo/1.jpeg';
+
+/* ── Canvas de particules animées ────────────────────────────────── */
+function ParticleCanvas() {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const particles = [];
+    let animId;
+
+    function resize() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    }
+
+    function init() {
+      resize();
+      particles.length = 0;
+      // Moins de particules sur mobile pour préserver les perf
+      const n = Math.min(55, Math.floor((canvas.width * canvas.height) / 13000));
+      for (let i = 0; i < n; i++) {
+        particles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+          vx: (Math.random() - 0.5) * 0.38,
+          vy: (Math.random() - 0.5) * 0.38,
+          r: Math.random() * 1.6 + 0.5,
+        });
+      }
+    }
+
+    function frame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < 0 || p.x > canvas.width)  p.vx *= -1;
+        if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+      }
+
+      // Lignes entre particules proches
+      for (let i = 0; i < particles.length; i++) {
+        for (let j = i + 1; j < particles.length; j++) {
+          const dx = particles[i].x - particles[j].x;
+          const dy = particles[i].y - particles[j].y;
+          const d = Math.sqrt(dx * dx + dy * dy);
+          if (d < 115) {
+            ctx.beginPath();
+            ctx.moveTo(particles[i].x, particles[i].y);
+            ctx.lineTo(particles[j].x, particles[j].y);
+            ctx.strokeStyle = `rgba(196,138,33,${0.2 * (1 - d / 115)})`;
+            ctx.lineWidth = 0.7;
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Points dorés
+      for (const p of particles) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(196,138,33,0.7)';
+        ctx.fill();
+      }
+
+      animId = requestAnimationFrame(frame);
+    }
+
+    init();
+    frame();
+
+    const obs = new ResizeObserver(init);
+    obs.observe(canvas);
+    return () => { cancelAnimationFrame(animId); obs.disconnect(); };
+  }, []);
+
+  return (
+    <canvas
+      ref={canvasRef}
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      aria-hidden="true"
+    />
+  );
+}
 
 /* ── Login modal ─────────────────────────────────────── */
 function LoginModal({ onClose, onForgotPassword }) {
@@ -27,19 +114,43 @@ function LoginModal({ onClose, onForgotPassword }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" style={{ background: 'rgba(7,15,20,0.85)', backdropFilter: 'blur(6px)' }}>
-      <div className="w-full max-w-md bg-white rounded-2xl overflow-hidden shadow-2xl relative">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-navy z-10">
-          <X size={20} />
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center px-4"
+      style={{ background: 'rgba(4,12,18,0.88)', backdropFilter: 'blur(8px)' }}
+    >
+      {/* Halo doré derrière le modal */}
+      <div
+        className="absolute pointer-events-none"
+        style={{
+          width: '380px', height: '380px', borderRadius: '50%',
+          background: 'radial-gradient(circle, rgba(196,138,33,0.18) 0%, transparent 70%)',
+        }}
+      />
+
+      <div
+        className="w-full max-w-md bg-white rounded-2xl overflow-hidden relative modal-enter"
+        style={{ boxShadow: '0 0 0 1px rgba(196,138,33,0.25), 0 28px 80px rgba(0,0,0,0.55)' }}
+      >
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-navy z-10 p-1 rounded-full hover:bg-gray-100 transition-colors">
+          <X size={18} />
         </button>
 
-        <div className="px-8 py-6 flex flex-col items-center text-center" style={{ background: '#09324e' }}>
-          <img src={logo} alt="Caisse Émergence" className="w-36 rounded-lg shadow-lg" />
+        {/* Bandeau logo */}
+        <div className="px-8 py-6 flex flex-col items-center text-center relative overflow-hidden"
+          style={{ background: 'linear-gradient(160deg, #09324e 0%, #135c60 100%)' }}>
+          {/* Éclat décoratif dans le bandeau */}
+          <div className="absolute -top-8 -right-8 w-32 h-32 rounded-full pointer-events-none opacity-20"
+            style={{ background: 'radial-gradient(circle, #c48a21 0%, transparent 70%)' }} />
+          <img src={logo} alt="Caisse Émergence" className="w-36 rounded-xl shadow-lg relative z-10" />
         </div>
 
-        <div className="px-8 py-8">
-          <h2 className="font-playfair text-xl font-bold text-navy text-center mb-1">Connexion à l'espace membres</h2>
-          <p className="text-sm text-center mb-6" style={{ color: '#98afc0' }}>Épargne · Crédit · Solidarité</p>
+        <div className="px-8 py-7">
+          <h2 className="font-playfair text-xl font-bold text-navy text-center mb-1">
+            Connexion à l'espace membres
+          </h2>
+          <p className="text-sm text-center mb-6" style={{ color: '#98afc0' }}>
+            Épargne · Crédit · Solidarité
+          </p>
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
@@ -73,17 +184,18 @@ function LoginModal({ onClose, onForgotPassword }) {
             )}
 
             <button type="submit" disabled={submitting}
-              className="btn-gold w-full py-3 text-base disabled:opacity-60">
+              className="btn-gold w-full py-3 text-base disabled:opacity-60"
+              style={{ borderRadius: '12px' }}>
               {submitting ? 'Connexion…' : 'Se connecter'}
             </button>
 
             <button type="button" onClick={onForgotPassword}
-              className="text-xs text-navy/60 hover:text-navy text-center w-full">
+              className="text-xs hover:text-navy text-center w-full transition-colors" style={{ color: '#98afc0' }}>
               Mot de passe oublié ?
             </button>
           </form>
 
-          <p className="text-xs text-center mt-5 leading-relaxed" style={{ color: '#98afc0' }}>
+          <p className="text-xs text-center mt-5 leading-relaxed" style={{ color: '#c2d4e0' }}>
             Accès réservé aux membres enregistrés par le secrétaire.
           </p>
         </div>
@@ -95,9 +207,9 @@ function LoginModal({ onClose, onForgotPassword }) {
 /* ── Feature card ────────────────────────────────────── */
 function FeatureCard({ icon: Icon, title, description, accent }) {
   return (
-    <div className="rounded-2xl p-8 flex flex-col gap-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
-      <div className="w-14 h-14 rounded-xl flex items-center justify-center" style={{ background: accent + '22' }}>
-        <Icon size={26} style={{ color: accent }} />
+    <div className="rounded-2xl p-7 flex flex-col gap-4" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}>
+      <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: accent + '22' }}>
+        <Icon size={24} style={{ color: accent }} />
       </div>
       <h3 className="font-playfair text-xl font-bold text-white">{title}</h3>
       <p className="text-sm leading-relaxed" style={{ color: '#98afc0' }}>{description}</p>
@@ -139,7 +251,6 @@ const SLIDES = [
   { tag: '03', title: 'SOLIDARITÉ', caption: "L'entraide communautaire au cœur de chaque décision de la caisse." },
 ];
 
-/* ── Info bar items (style "free shipping / call us / location") ── */
 const INFO_ITEMS = [
   { icon: ShieldCheck, caption: 'ESPACE SÉCURISÉ', sub: 'Connexion protégée par mot de passe' },
   { icon: HandCoins, caption: 'COTISATIONS FLEXIBLES', sub: 'Montant variable chaque mois' },
@@ -164,7 +275,7 @@ const LandingPage = () => {
   const scrollTo = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
-    <div className="min-h-screen font-inter" style={{ background: '#09324e' }}>
+    <div className="min-h-screen font-inter" style={{ background: '#09324e', overflowX: 'hidden' }}>
 
       {/* ── Top bar ── */}
       <div className="hidden sm:flex items-center justify-between px-8 text-xs" style={{ background: '#072434', color: '#98afc0', height: '38px' }}>
@@ -177,11 +288,13 @@ const LandingPage = () => {
 
       {/* ── Header / nav ── */}
       <nav className="sticky top-0 z-40 px-4 sm:px-8 py-3" style={{ background: 'rgba(9,50,78,0.97)', backdropFilter: 'blur(8px)', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
             <img src={logo} alt="Logo" className="w-10 h-10 rounded-lg object-cover shrink-0" />
             <div className="min-w-0">
-              <span className="font-playfair font-bold text-white text-lg leading-none block truncate">Caisse <span style={{ color: '#c48a21' }}>ÉMERGENCE</span></span>
+              <span className="font-playfair font-bold text-white text-base sm:text-lg leading-none block truncate">
+                Caisse <span style={{ color: '#c48a21' }}>ÉMERGENCE</span>
+              </span>
               <span className="text-xs tracking-widest hidden sm:block" style={{ color: '#98afc0' }}>INNOVATION · CROISSANCE · CONFIANCE</span>
             </div>
           </div>
@@ -194,11 +307,11 @@ const LandingPage = () => {
 
           <div className="flex items-center gap-2 shrink-0">
             <button onClick={() => setShowLogin(true)}
-              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2 rounded-full text-sm font-semibold transition-all"
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
               style={{ background: '#c48a21', color: '#072434' }}>
               <span className="hidden sm:inline">Se connecter</span>
               <span className="sm:hidden">Connexion</span>
-              <ChevronRight size={15} />
+              <ChevronRight size={14} />
             </button>
 
             <button onClick={() => setMobileMenuOpen((v) => !v)} aria-label="Menu"
@@ -212,7 +325,7 @@ const LandingPage = () => {
           <div className="md:hidden flex flex-col gap-1 pt-3 pb-1 text-sm font-medium" style={{ color: '#cfe0ea' }}>
             {[['Accueil', 'hero'], ['Services', 'services'], ['Comment ça marche', 'comment'], ['Valeurs', 'valeurs']].map(([label, id]) => (
               <button key={id} onClick={() => { scrollTo(id); setMobileMenuOpen(false); }}
-                className="text-left px-2 py-2 rounded hover:bg-white/5 hover:text-white transition-colors">
+                className="text-left px-2 py-2.5 rounded hover:bg-white/5 hover:text-white transition-colors">
                 {label}
               </button>
             ))}
@@ -220,13 +333,19 @@ const LandingPage = () => {
         )}
       </nav>
 
-      {/* ── Hero slider ── */}
-      <section id="hero" className="relative overflow-hidden" style={{ background: 'linear-gradient(160deg, #09324e 0%, #135c60 65%, #09324e 100%)' }}>
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-175 h-175 rounded-full opacity-10 pointer-events-none"
+      {/* ── Hero slider avec canvas de particules ── */}
+      <section id="hero" className="relative overflow-hidden"
+        style={{ background: 'linear-gradient(160deg, #09324e 0%, #135c60 65%, #09324e 100%)' }}>
+
+        {/* Canvas animé en fond */}
+        <ParticleCanvas />
+
+        {/* Halo central subtil */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-150 rounded-full opacity-10 pointer-events-none"
           style={{ background: 'radial-gradient(circle, #c48a21 0%, transparent 70%)' }} />
 
-        <div className="relative min-h-115 flex items-center px-5 sm:px-8 md:px-20 py-16 sm:py-20">
-          {/* prev / next arrows */}
+        <div className="relative min-h-105 sm:min-h-120 flex items-center px-5 sm:px-10 md:px-20 py-14 sm:py-20">
+          {/* Flèches de navigation (desktop uniquement) */}
           <button onClick={prev} aria-label="Précédent"
             className="hidden md:flex absolute left-4 top-1/2 -translate-y-1/2 items-center justify-center w-12 h-12 rounded-full transition-colors hover:bg-white/10">
             <ChevronLeft size={30} color="#98afc0" />
@@ -236,29 +355,35 @@ const LandingPage = () => {
             <ChevronRight size={30} color="#98afc0" />
           </button>
 
-          {/* caption */}
-          <div className="max-w-xl">
+          {/* Contenu du slide */}
+          <div className="max-w-xl w-full">
             <div className="flex items-baseline gap-3 sm:gap-4 mb-4 flex-wrap">
-              <span className="font-playfair font-bold text-white leading-none" style={{ fontSize: 'clamp(3rem, 12vw, 5rem)' }}>{SLIDES[slide].tag}</span>
-              <span className="font-playfair font-bold leading-tight" style={{ fontSize: 'clamp(1.25rem, 6vw, 2rem)', color: '#c48a21' }}>{SLIDES[slide].title}</span>
+              <span className="font-playfair font-bold text-white leading-none"
+                style={{ fontSize: 'clamp(2.5rem, 10vw, 5rem)' }}>
+                {SLIDES[slide].tag}
+              </span>
+              <span className="font-playfair font-bold leading-tight"
+                style={{ fontSize: 'clamp(1.1rem, 5vw, 2rem)', color: '#c48a21' }}>
+                {SLIDES[slide].title}
+              </span>
             </div>
-            <p className="text-base leading-relaxed mb-8" style={{ color: '#cfe0ea' }}>
+            <p className="text-sm sm:text-base leading-relaxed mb-8" style={{ color: '#cfe0ea', maxWidth: '420px' }}>
               {SLIDES[slide].caption}
             </p>
-            <div className="flex flex-wrap gap-4">
+            <div className="flex flex-wrap gap-3">
               <button onClick={() => setShowLogin(true)}
-                className="flex items-center gap-2 px-5 sm:px-7 py-3.5 rounded-full font-bold text-sm shadow-xl transition-all hover:scale-105"
+                className="flex items-center gap-2 px-5 sm:px-7 py-3.5 rounded-full font-bold text-sm shadow-xl transition-all hover:scale-105 active:scale-95"
                 style={{ background: '#c48a21', color: '#072434' }}>
-                <Sparkles size={16} /> Accéder à l'espace membres
+                <Sparkles size={15} /> Accéder à l'espace membres
               </button>
               <button onClick={() => scrollTo('services')}
-                className="flex items-center gap-2 px-5 sm:px-7 py-3.5 rounded-full font-bold text-sm transition-all border-2"
-                style={{ borderColor: 'rgba(255,255,255,0.4)', color: '#fff' }}>
+                className="flex items-center gap-2 px-5 sm:px-7 py-3.5 rounded-full font-bold text-sm transition-all border-2 hover:bg-white/5"
+                style={{ borderColor: 'rgba(255,255,255,0.35)', color: '#fff' }}>
                 En savoir plus
               </button>
             </div>
 
-            {/* dots */}
+            {/* Points de pagination */}
             <div className="flex gap-2 mt-10">
               {SLIDES.map((_, i) => (
                 <button key={i} onClick={() => setSlide(i)} aria-label={`Slide ${i + 1}`}
@@ -269,12 +394,12 @@ const LandingPage = () => {
           </div>
         </div>
 
-        {/* ── Info strip (overlapping bottom edge, like Tyche's main-slider-bar) ── */}
+        {/* Bandeau d'info (or) */}
         <div className="relative" style={{ background: '#c48a21' }}>
           <div className="max-w-5xl mx-auto grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-white/25">
             {INFO_ITEMS.map(({ icon: Icon, caption, sub }) => (
               <div key={caption} className="flex items-center gap-4 px-8 py-5 justify-center sm:justify-start">
-                <Icon size={32} color="#072434" />
+                <Icon size={28} color="#072434" className="shrink-0" />
                 <div>
                   <div className="font-bold text-sm tracking-wide" style={{ color: '#072434' }}>{caption}</div>
                   <div className="text-xs" style={{ color: '#072434', opacity: 0.75 }}>{sub}</div>
@@ -286,10 +411,10 @@ const LandingPage = () => {
       </section>
 
       {/* ── Services ── */}
-      <section id="services" className="px-6 py-24 max-w-5xl mx-auto">
+      <section id="services" className="px-5 sm:px-6 py-20 sm:py-24 max-w-5xl mx-auto">
         <div className="text-center mb-14">
           <p className="text-xs tracking-widest font-semibold mb-3" style={{ color: '#c48a21' }}>NOS SERVICES</p>
-          <h2 className="font-playfair font-bold text-white text-4xl">Tout ce dont votre caisse a besoin</h2>
+          <h2 className="font-playfair font-bold text-white text-3xl sm:text-4xl">Tout ce dont votre caisse a besoin</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FeatureCard icon={HandCoins} accent="#c48a21" title="Épargne & Cotisations"
@@ -302,8 +427,8 @@ const LandingPage = () => {
       </section>
 
       {/* ── How it works ── */}
-      <section id="comment" className="px-6 py-20" style={{ background: 'rgba(0,0,0,0.15)' }}>
-        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-16 items-center">
+      <section id="comment" className="px-5 sm:px-6 py-20" style={{ background: 'rgba(0,0,0,0.15)' }}>
+        <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-12 md:gap-16 items-center">
           <div>
             <p className="text-xs tracking-widest font-semibold mb-3" style={{ color: '#c48a21' }}>COMMENT ÇA MARCHE</p>
             <h2 className="font-playfair font-bold text-white text-3xl mb-10">Simple, rapide et sécurisé</h2>
@@ -336,9 +461,9 @@ const LandingPage = () => {
       </section>
 
       {/* ── Values ── */}
-      <section id="valeurs" className="px-6 py-24 text-center max-w-3xl mx-auto">
+      <section id="valeurs" className="px-5 sm:px-6 py-20 sm:py-24 text-center max-w-3xl mx-auto">
         <p className="text-xs tracking-widest font-semibold mb-3" style={{ color: '#c48a21' }}>NOS VALEURS</p>
-        <h2 className="font-playfair font-bold text-white text-4xl mb-14">Ce qui nous définit</h2>
+        <h2 className="font-playfair font-bold text-white text-3xl sm:text-4xl mb-14">Ce qui nous définit</h2>
         <div className="flex flex-col sm:flex-row justify-center gap-10">
           <ValuePill label="INNOVATION" sub="Des outils modernes pour gérer votre caisse sans effort." />
           <ValuePill label="CROISSANCE" sub="Construire ensemble une épargne collective solide." />
@@ -349,19 +474,19 @@ const LandingPage = () => {
       {/* ── CTA banner ── */}
       <section className="mx-4 sm:mx-6 mb-20 rounded-3xl px-6 sm:px-10 py-12 sm:py-16 text-center"
         style={{ background: 'linear-gradient(135deg, #135c60, #09324e)', border: '1px solid rgba(196,138,33,0.25)' }}>
-        <h2 className="font-playfair font-bold text-white text-3xl mb-4">Prêt à rejoindre la caisse ?</h2>
+        <h2 className="font-playfair font-bold text-white text-2xl sm:text-3xl mb-4">Prêt à rejoindre la caisse ?</h2>
         <p className="text-sm mb-8 max-w-md mx-auto" style={{ color: '#98afc0' }}>
           Connectez-vous à votre espace membre pour consulter vos cotisations, suivre vos prêts et bénéficier du fonds de solidarité.
         </p>
         <button onClick={() => setShowLogin(true)}
-          className="inline-flex items-center gap-2 px-10 py-4 rounded-full font-bold text-base transition-all hover:scale-105 shadow-xl"
+          className="inline-flex items-center gap-2 px-8 sm:px-10 py-4 rounded-full font-bold text-base transition-all hover:scale-105 active:scale-95 shadow-xl"
           style={{ background: '#c48a21', color: '#072434' }}>
           Accéder à mon espace <ChevronRight size={18} />
         </button>
       </section>
 
       {/* ── Footer ── */}
-      <footer className="px-8 py-10" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
+      <footer className="px-6 sm:px-8 py-10" style={{ borderTop: '1px solid rgba(255,255,255,0.07)' }}>
         <div className="max-w-5xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src={logo} alt="Logo" className="w-9 h-9 rounded-lg object-cover" />
@@ -374,7 +499,7 @@ const LandingPage = () => {
         </div>
       </footer>
 
-      {/* ── Login modal ── */}
+      {/* ── Modals ── */}
       {showLogin && (
         <LoginModal
           onClose={() => setShowLogin(false)}

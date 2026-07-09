@@ -142,7 +142,7 @@ const ContributionList = ({ isSecretary }) => {
     <div className="space-y-6 animate-fade-in">
       <div className="flex justify-between items-center flex-wrap gap-4">
         <h2 className="font-playfair text-2xl font-bold text-navy">Bulletin des cotisations</h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           {canValidateContribution && (
             <button
               onClick={() => setShowOnlyPendingForMe((v) => !v)}

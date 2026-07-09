@@ -5,6 +5,7 @@ import MeetingFeedbackController from '../../controllers/MeetingFeedbackControll
 import { useAuth } from '../Auth/AuthContext';
 import { useToast } from '../UI/Toast';
 import { CYCLE_MONTHS, CYCLE_MONTHS_FULL, getCurrentCycleMonth } from '../../utils/cycleMonth';
+import LoadingSpinner from '../UI/LoadingSpinner';
 
 const MeetingRollCall = ({ isSecretary }) => {
   const { user } = useAuth();
@@ -161,7 +162,7 @@ const MeetingRollCall = ({ isSecretary }) => {
   );
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-400">Chargement des présences…</div>;
+    return <LoadingSpinner label="Chargement des présences…" />;
   }
 
   return (

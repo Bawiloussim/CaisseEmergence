@@ -10,6 +10,7 @@ import LoanController from '../../controllers/LoanController';
 import { useAuth } from '../Auth/AuthContext';
 import { CYCLE_MONTHS_FULL, getCurrentCycleMonth } from '../../utils/cycleMonth';
 import { Calendar, Video } from 'lucide-react';
+import LoadingSpinner from '../UI/LoadingSpinner';
 
 const Dashboard = ({ onNavigateToProgram }) => {
   const { user } = useAuth();
@@ -70,7 +71,7 @@ const Dashboard = ({ onNavigateToProgram }) => {
   const MONTH_LABELS = ['Juin','Juil','Août','Sept','Oct','Nov','Déc','Jan','Fév','Mar','Avr','Mai'];
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-400">Chargement du tableau de bord…</div>;
+    return <LoadingSpinner label="Chargement du tableau de bord…" />;
   }
 
   return (

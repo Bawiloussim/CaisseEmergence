@@ -5,6 +5,7 @@ import LoanController from '../../controllers/LoanController';
 import MemberController from '../../controllers/MemberController';
 import ContributionController from '../../controllers/ContributionController';
 import { Plus, AlertTriangle } from 'lucide-react';
+import LoadingSpinner from '../UI/LoadingSpinner';
 import { useAuth } from '../Auth/AuthContext';
 import PDFService from '../../services/PDFService';
 import StorageService from '../../services/StorageService';
@@ -137,7 +138,7 @@ const LoanList = ({ isSecretary }) => {
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-400">Chargement des prêts…</div>;
+    return <LoadingSpinner label="Chargement des prêts…" />;
   }
 
   return (

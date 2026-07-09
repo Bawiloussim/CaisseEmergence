@@ -5,6 +5,7 @@ import AidForm from './AidForm';
 import SolidarityController from '../../controllers/SolidarityController';
 import MemberController from '../../controllers/MemberController';
 import { Plus } from 'lucide-react';
+import LoadingSpinner from '../UI/LoadingSpinner';
 
 const Solidarity = ({ isSecretary }) => {
   const [showForm, setShowForm] = useState(false);
@@ -64,7 +65,7 @@ const Solidarity = ({ isSecretary }) => {
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-400">Chargement de la solidarité…</div>;
+    return <LoadingSpinner label="Chargement de la solidarité…" />;
   }
 
   return (

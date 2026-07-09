@@ -9,6 +9,7 @@ import LoanController from '../../controllers/LoanController';
 import MemberController from '../../controllers/MemberController';
 import MeetingFeedbackController from '../../controllers/MeetingFeedbackController';
 import { MONTHS, MONTHS_FULL } from '../../models/ContributionModel';
+import LoadingSpinner from '../UI/LoadingSpinner';
 
 const COLORS = ['#c48a21', '#0f3751', '#4ade80', '#56a7d2', '#f87171', '#a78bfa', '#fb923c', '#34d399'];
 
@@ -134,7 +135,7 @@ const Statistics = () => {
   }, [monthlyTotals, loans]);
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-400">Chargement des statistiques…</div>;
+    return <LoadingSpinner label="Chargement des statistiques…" />;
   }
 
   return (

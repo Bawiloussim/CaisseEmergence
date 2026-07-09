@@ -8,6 +8,7 @@ import { Plus, Smartphone, Upload, CheckCircle, Clock, Filter } from 'lucide-rea
 import { MONTHS_FULL } from '../../models/ContributionModel';
 import { useAuth } from '../Auth/AuthContext';
 import Modal from '../UI/Modal';
+import LoadingSpinner from '../UI/LoadingSpinner';
 
 const FLOOZ_NUMBER = '79854438';
 
@@ -135,7 +136,7 @@ const ContributionList = ({ isSecretary }) => {
   };
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-400">Chargement des cotisations…</div>;
+    return <LoadingSpinner label="Chargement des cotisations…" />;
   }
 
   return (

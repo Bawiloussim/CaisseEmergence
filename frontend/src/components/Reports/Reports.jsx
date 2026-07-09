@@ -7,6 +7,7 @@ import LoanController from '../../controllers/LoanController';
 import SolidarityController from '../../controllers/SolidarityController';
 import PDFService from '../../services/PDFService';
 import { FileText, Users, CreditCard } from 'lucide-react';
+import LoadingSpinner from '../UI/LoadingSpinner';
 
 const Reports = () => {
   const [members, setMembers] = useState([]);
@@ -74,7 +75,7 @@ const Reports = () => {
   ];
 
   if (loading) {
-    return <div className="text-center py-12 text-gray-400">Chargement des rapports…</div>;
+    return <LoadingSpinner label="Chargement des rapports…" />;
   }
 
   return (

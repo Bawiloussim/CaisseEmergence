@@ -3,6 +3,7 @@ import { Send, Circle } from 'lucide-react';
 import { useAuth } from '../Auth/AuthContext';
 import { useChat } from './ChatContext';
 import ChatController from '../../controllers/ChatController';
+import LoadingSpinner from '../UI/LoadingSpinner';
 
 const POLL_ONLINE_INTERVAL_MS = 5000;
 const HEARTBEAT_INTERVAL_MS = 20000;
@@ -68,7 +69,7 @@ const Chat = () => {
   };
 
   if (!loaded) {
-    return <div className="text-center py-12 text-gray-400">Chargement du chat…</div>;
+    return <LoadingSpinner label="Chargement du chat…" />;
   }
 
   return (

@@ -78,7 +78,6 @@ class MemberController {
         joinDate: apiMember.joinDate || '',
         cni: apiMember.cni || '',
         dob: apiMember.dob || '',
-        birthday: apiMember.birthday || '',
         address: apiMember.address || '',
         momoNumber: apiMember.momoNumber || '',
         photo: apiMember.photo || '',
@@ -88,11 +87,6 @@ class MemberController {
     });
     StorageService.saveMembers(merged);
     return merged;
-  }
-
-  // Membres dont c'est l'anniversaire aujourd'hui (pour la bannière in-app).
-  async getTodaysBirthdays() {
-    return api.get('/members/birthdays/today');
   }
 
 }

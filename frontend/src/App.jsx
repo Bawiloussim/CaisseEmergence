@@ -32,17 +32,7 @@ function AppContent() {
   const { showToast }           = useToast();
   const { unreadCount: unreadChatCount } = useChat();
 
-  const [pendingProofCount,       setPendingProofCount]       = useState(0);
-  const [birthdaysToday,          setBirthdaysToday]          = useState([]);
-  const [birthdayBannerDismissed, setBirthdayBannerDismissed] = useState(false);
-
-  /* ── Anniversaires du jour ── */
-  useEffect(() => {
-    if (!user) return;
-    MemberController.getTodaysBirthdays()
-      .then(setBirthdaysToday)
-      .catch(err => console.error('Échec de la récupération des anniversaires du jour', err));
-  }, [user]);
+  const [pendingProofCount, setPendingProofCount] = useState(0);
 
   /* ── Badge cotisations en attente de validation ── */
   useEffect(() => {
@@ -138,7 +128,7 @@ function AppContent() {
       {/* ── Colonne droite (décalée de 240px sur desktop) ── */}
       <div className="flex flex-col flex-1 overflow-hidden md:ml-60">
 
-        {/* Top bar + bannière anniversaire */}
+        {/* Top bar */}
         <Header
           isSecretary={isSecretary}
           user={user}
@@ -147,9 +137,6 @@ function AppContent() {
           onUpdateSettings={updateSettings}
           activeTab={activeTab}
           onMenuToggle={() => setSidebarOpen(v => !v)}
-          birthdaysToday={birthdaysToday}
-          birthdayBannerDismissed={birthdayBannerDismissed}
-          onDismissBirthday={() => setBirthdayBannerDismissed(true)}
         />
 
         {/* Contenu scrollable */}

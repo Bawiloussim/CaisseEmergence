@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Menu, Settings, Camera, Cake, X } from 'lucide-react';
+import { Menu, Settings, Camera } from 'lucide-react';
 import ProfileModal from '../Auth/ProfileModal';
 
 const TAB_LABELS = {
@@ -22,9 +22,6 @@ const Header = ({
   onUpdateSettings,
   activeTab,
   onMenuToggle,
-  birthdaysToday = [],
-  birthdayBannerDismissed,
-  onDismissBirthday,
 }) => {
   const [showSettings, setShowSettings] = useState(false);
   const [showProfile,  setShowProfile]  = useState(false);
@@ -154,28 +151,6 @@ const Header = ({
           </span>
         </button>
       </div>
-
-      {/* Bannière anniversaire */}
-      {!birthdayBannerDismissed && birthdaysToday.length > 0 && (
-        <div
-          className="flex items-center justify-center gap-2 text-sm font-medium relative px-10 py-2"
-          style={{ background: 'rgba(196,138,33,0.15)', borderTop: '1px solid rgba(196,138,33,0.25)' }}
-        >
-          <Cake size={15} className="shrink-0" style={{ color: '#c48a21' }} />
-          <span style={{ color: '#c48a21' }}>
-            🎉 Aujourd'hui, c'est l'anniversaire de{' '}
-            <strong>{birthdaysToday.map(m => m.name).join(', ')}</strong> !
-          </span>
-          <button
-            onClick={onDismissBirthday}
-            className="absolute right-3 hover:opacity-70 transition-opacity"
-            style={{ color: '#c48a21' }}
-            aria-label="Fermer"
-          >
-            <X size={15} />
-          </button>
-        </div>
-      )}
 
       {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
     </header>

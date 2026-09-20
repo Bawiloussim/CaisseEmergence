@@ -4,6 +4,7 @@ const connectDB = require('./config/db');
 const app = require('./app');
 const Contribution = require('./models/Contribution');
 const migrateLegacyValidations = require('./utils/migrateLegacyValidations');
+const cleanupBirthdayData = require('./utils/cleanupBirthdayData');
 
 connectDB().then(async () => {
   // Supprime l'ancien index unique (memberId, month) toujours présent en
@@ -11,6 +12,7 @@ connectDB().then(async () => {
   // Mongoose ne le fait pas automatiquement, seulement à la création.
   await Contribution.syncIndexes();
   await migrateLegacyValidations();
+  await cleanupBirthdayData();
 });
 
 const PORT = process.env.PORT || 5000;
